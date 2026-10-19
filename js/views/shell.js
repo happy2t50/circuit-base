@@ -29,6 +29,11 @@
     if (m.diagram) return '<div class="diagram-wrap">' + CB.diagrams.diagramSVG(m.diagram) + '</div>';
     if (m.symbol) return CB.symbols.symbolSVG(m.symbol, { label: m.label });
     if (m.component) { const c = CB.components.byId[m.component]; return c ? '<div class="ill-wrap">' + c.ill + '</div>' : ''; }
+    if (m.breadboard) {
+      let b = m.breadboard;
+      if (b.exercise) { const ex = CB.labExercises.find((e) => e.id === b.exercise); b = Object.assign({ fixed: ex.fixed, pieces: ex.pieces, placement: ex.solution }, b); }
+      return '<div class="bb-scroll">' + CB.breadboardView.render({ placement: b.placement || {}, fixed: b.fixed || [], pieces: b.pieces || [], highlight: b.highlight, label: b.label }) + '</div>' + (b.caption ? '<p class="small muted">' + b.caption + '</p>' : '');
+    }
     if (m.html) return m.html;
     return '';
   }
@@ -38,8 +43,10 @@
     const st = store.state;
     const modules = CB.modules.map((m) => {
       const ls = (m.lessons || []);
-      const done = ls.filter((id) => st.lessons[id] && st.lessons[id].completed).length;
-      return { module: m, total: ls.length, done, pct: ls.length ? Math.round((done / ls.length) * 100) : 0 };
+      const ps = CB.practices.byModule(m.id);
+      const done = ls.filter((id) => st.lessons[id] && st.lessons[id].completed).length + ps.filter((p) => st.practices[p.id] && st.practices[p.id].completed).length;
+      const total = ls.length + ps.length;
+      return { module: m, total, lessons: ls.length, practices: ps.length, done, pct: total ? Math.round((done / total) * 100) : 0 };
     });
     const actIds = Object.keys(index.activities);
     const graded = actIds.filter((id) => index.activities[id].act.type !== 'reflection');
@@ -103,5 +110,45 @@
     });
   }
 
-  CB.shell = { buildIndex, media, progress, bar, statusPill, polarityPill, safetyNote, mount, renderActivities };
+  /** Las explicaciones pueden indicar la línea por número ({line}) o por un fragmento de texto ({find}). */
+  function resolveExplain(sketch, explain) {
+    const lines = sketch.split('\n');
+    return (explain || []).map((e) => {
+      if (e.line) return e;
+      const i = lines.findIndex((l) => l.includes(e.find));
+      if (i < 0) throw new Error('Explicación sin línea: ' + e.find);
+      return { line: i + 1, text: e.text };
+    });
+  }
+
+  /** Bloque de código Arduino numerado con explicación línea por línea (resalta la línea al pasar el ratón). */
+  function codeBlock(sketch, explain, filename) {
+    const lines = sketch.split('\n');
+    const id = 'code-' + Math.random().toString(36).slice(2, 8);
+    explain = resolveExplain(sketch, explain);
+    return '<div class="code-wrap" data-code="' + id + '"><div class="code-head"><span>' + U.esc(filename || 'sketch.ino') + ' · Arduino Uno R3</span><button type="button" class="btn-sm" data-copy="' + id + '">Copiar código</button></div>' +
+      '<pre class="code" id="' + id + '"><code>' + lines.map((ln, i) => '<span class="code-line" data-line="' + (i + 1) + '"><span class="ln">' + (i + 1) + '</span>' + U.esc(ln) + '</span>').join('') + '</code></pre>' +
+      (explain && explain.length ? '<ol class="explain">' + explain.map((e) => '<li data-for="' + e.line + '" tabindex="0"><span class="ln-ref">' + (Array.isArray(e.line) ? 'Líneas ' + e.line.join('–') : 'Línea ' + e.line) + '</span><p>' + e.text + '</p></li>').join('') + '</ol>' : '') + '</div>';
+  }
+  /** Activa copiar y resaltado en todos los bloques de código dentro de un contenedor. */
+  function wireCode(container, sketches) {
+    U.$all('.code-wrap', container).forEach((wrap) => {
+      const pre = U.$('pre', wrap);
+      U.$all('.explain li', wrap).forEach((li) => {
+        const range = li.dataset.for.split(',').map(Number);
+        const on = () => U.$all('.code-line', pre).forEach((l) => { const n = +l.dataset.line; if (range.length === 2 ? n >= range[0] && n <= range[1] : n === range[0]) l.classList.add('is-hl'); });
+        const off = () => U.$all('.code-line.is-hl', pre).forEach((x) => x.classList.remove('is-hl'));
+        li.addEventListener('mouseenter', on); li.addEventListener('mouseleave', off); li.addEventListener('focus', on); li.addEventListener('blur', off);
+      });
+      const btn = U.$('[data-copy]', wrap);
+      btn.addEventListener('click', () => {
+        const text = U.$all('.code-line', pre).map((l) => l.textContent.replace(/^\d+/, '')).join('\n');
+        const done = () => { btn.textContent = 'Copiado'; setTimeout(() => { btn.textContent = 'Copiar código'; }, 1600); };
+        const fallback = () => { const r = document.createRange(); r.selectNodeContents(pre); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); btn.textContent = 'Seleccionado: pulsa Ctrl+C'; };
+        try { navigator.clipboard.writeText(text).then(done, fallback); } catch (err) { fallback(); }
+      });
+    });
+  }
+
+  CB.shell = { resolveExplain, codeBlock, wireCode, buildIndex, media, progress, bar, statusPill, polarityPill, safetyNote, mount, renderActivities };
 })(typeof window !== 'undefined' ? window : globalThis);

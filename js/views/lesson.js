@@ -68,9 +68,11 @@
       const showMedia = s.media && !mediaInActivity;
       slideEl.innerHTML = '<h2>' + U.esc(s.title) + '</h2><div class="slide-body' + (showMedia ? ' has-media' : '') + '"><div class="prose">' + s.body + '</div>' +
         (showMedia ? '<figure class="slide-media">' + S.media(s.media) + '</figure>' : '') + '</div>' +
+        (s.code ? '<div class="slide-code">' + S.codeBlock(s.code.sketch, s.code.explain, s.code.file) + '</div>' : '') +
         (s.more ? '<details class="more"><summary>Explicación adicional</summary>' + s.more + '</details>' : '') +
         '<div class="slide-activities"></div>';
       S.renderActivities(U.$('.slide-activities', slideEl), actIds, { store, index, onResult: drawIndex });
+      S.wireCode(slideEl);
       U.$('#slide-count').textContent = 'Diapositiva ' + (current + 1) + ' de ' + l.slides.length;
       U.$('#slide-bar').innerHTML = S.bar(Math.round(((current + 1) / l.slides.length) * 100), 'Progreso de la lección');
       U.$('#prev').disabled = current === 0;

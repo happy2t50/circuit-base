@@ -21,7 +21,16 @@ def check(name, cond, detail=""):
 ROUTES = ["/", "/modulos", "/leccion/m1-electricidad", "/leccion/m1-magnitudes", "/leccion/m1-circuitos", "/leccion/m1-ohm",
           "/leccion/m1-potencia", "/leccion/m1-multimetro", "/leccion/m1-seguridad", "/leccion/m2-identificar", "/leccion/m3-diagramas",
           "/componentes", "/componentes/led", "/componentes/transistor", "/simbolos", "/simbolos/npn", "/laboratorio",
-          "/cuestionarios", "/proyectos", "/proyectos/a1-blink-externo", "/progreso"]
+          "/cuestionarios", "/proyectos", "/proyectos/a1-blink-externo", "/progreso",
+          "/leccion/m2-activos", "/leccion/m3-interpretar", "/leccion/m4-protoboard", "/leccion/m4-montaje",
+          "/leccion/m6-tinkercad-intro", "/leccion/m6-tinkercad-arduino", "/leccion/m7-microcontrolador", "/leccion/m7-estructura",
+          "/leccion/m7-entradas", "/leccion/m7-analogico", "/leccion/m7-programacion", "/leccion/m8-sensores-analogicos",
+          "/leccion/m8-distancia", "/leccion/m8-actuadores", "/leccion/m8-pantallas-reles",
+          "/proyectos/e1-led-basico", "/proyectos/e2-variar-resistencia", "/proyectos/e3-leds-serie", "/proyectos/e4-leds-paralelo",
+          "/proyectos/e5-pulsador", "/proyectos/e6-potenciometro", "/proyectos/e7-sensor-ldr", "/proyectos/e8-zumbador",
+          "/proyectos/a2-pulsador", "/proyectos/a3-potenciometro-serie", "/proyectos/a4-pwm-fade",
+          "/proyectos/p1-semaforo", "/proyectos/p2-led-pulsador", "/proyectos/p3-luz-automatica", "/proyectos/p4-distancia",
+          "/proyectos/p5-alarma", "/proyectos/p6-servo", "/proyectos/p7-proyecto-final"]
 
 def go(page, route):
     page.goto(URL + "#" + route)
@@ -183,10 +192,12 @@ with sync_playwright() as p:
     page.click("[data-st='review']")
     check("cuestionarios: filtro 'por repasar' funciona", page.locator("#q-count").inner_text().endswith("actividad(es)"))
     page.select_option("#q-type", "order"); page.click("[data-st='all']")
-    check("cuestionarios: filtro por tipo", page.locator(".activity").count() == 2, str(page.locator(".activity").count()))
+    n_order = page.evaluate("Object.values(CB.app.index.activities).filter(e => e.act.type === 'order').length")
+    check("cuestionarios: filtro por tipo", page.locator(".activity").count() == n_order, f"{page.locator('.activity').count()} vs {n_order}")
     go(page, "/progreso")
     txt = page.locator("#view").inner_text()
-    check("progreso: muestra lección completada", "1 / 9" in txt, txt[:300])
+    n_lessons = page.evaluate("CB.lessons.length")
+    check("progreso: muestra lección completada", f"1 / {n_lessons}" in txt, txt[:300])
     check("progreso: historial de prácticas", "Práctica: LED externo intermitente en D8" in txt)
     check("progreso: explica que no hay sincronización", "no se sincroniza" in txt)
     page.click("#export")
@@ -194,6 +205,39 @@ with sync_playwright() as p:
     check("progreso: copia de seguridad JSON válida", data.get("schema") == 1 and "m1-ohm" in data["lessons"])
     page.click("#reset"); page.click("#reset-yes")
     check("progreso: borrar todo funciona", page.evaluate("Object.keys(CB.app.store.state.lessons).length") == 0)
+
+    # ---------------- Fases 5–8
+    go(page, "/modulos")
+    check("módulos: ningún módulo queda como 'Planeado'", page.locator(".pill", has_text="Planeado").count() == 0)
+    check("módulos: el Módulo 5 lista sus 8 prácticas", page.locator("#m5 .lesson-row").count() == 8, str(page.locator("#m5 .lesson-row").count()))
+    go(page, "/proyectos")
+    check("proyectos: 19 prácticas y proyectos listados", page.locator(".project-card").count() == 19, str(page.locator(".project-card").count()))
+    go(page, "/leccion/m7-analogico"); page.select_option("#jump", "2")
+    check("lección con código: 12 líneas numeradas", page.locator("#slide .code-line").count() == 12, str(page.locator("#slide .code-line").count()))
+    page.locator("#slide .explain li").first.hover()
+    check("explicación resalta su línea de código", page.locator("#slide .code-line.is-hl").count() == 1)
+    go(page, "/leccion/m4-protoboard")
+    check("lección con protoboard resaltada: 5 orificios", page.locator("#slide .bb-hole.hl").count() == 5)
+    go(page, "/proyectos/p5-alarma")
+    secs = page.locator(".toc a").all_inner_texts()
+    check("proyecto: incluye planificación, pruebas, diagnóstico y evaluación", all(x in secs for x in ["Planificación", "Pruebas", "Diagnóstico", "Evaluación"]), str(secs))
+    check("proyecto: montaje y esquema dibujados", page.locator("svg.bb").count() == 1 and page.locator("svg.diagram").count() >= 1)
+    go(page, "/proyectos/e6-potenciometro")
+    check("práctica sin Arduino: sin sección de código", "Código" not in page.locator(".toc").inner_text())
+    go(page, "/proyectos/p7-proyecto-final")
+    check("proyecto final: botón bloqueado sin elegir opción", page.locator("#practice-done").is_disabled())
+    page.click("text=Asistente de estacionamiento")
+    check("proyecto final: muestra requisitos de la opción elegida", "HC-SR04 Trig / Echo" in page.locator("#final-detail").inner_text())
+    page.reload(); page.wait_for_selector("#final-detail")
+    check("proyecto final: la opción elegida persiste", page.locator("input[value=estacionamiento]").is_checked())
+    go(page, "/laboratorio")
+    page.select_option("#bb-ex", "lab-parallel"); page.click("#bb-solution"); page.click("#bb-check")
+    check("laboratorio: ejercicio de LED en paralelo verificable", "Montaje correcto" in page.locator("#bb-result").inner_text(), page.locator("#bb-result").inner_text())
+    page.select_option("#bb-ex", "lab-button")
+    for k, h in {"S1.1": "e4", "S1.2": "f6", "R1.1": "g6", "R1.2": "g10", "LED1.A": "h13", "LED1.K": "h10", "J1.A": "tp4", "J1.B": "a4", "J2.A": "i13", "J2.B": "tn13"}.items():
+        page.click(f"[data-pick='{k}']"); page.fill("#hole-in", h); page.click("#hole-form button")
+    page.click("#bb-check")
+    check("laboratorio: pulsador con LED invertido se detecta", "invertido" in page.locator("#bb-result").inner_text(), page.locator("#bb-result").inner_text())
 
     # Accesibilidad básica
     go(page, "/"); page.reload(); page.wait_for_selector("#view h1")  # carga nueva

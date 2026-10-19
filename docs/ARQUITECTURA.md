@@ -11,6 +11,9 @@
 | Motores sin dependencia del DOM (`js/engine/`) | Ley de Ohm, verificador de protoboard y evaluadores de actividades se prueban en Node sin navegador. |
 | Diagramas en SVG generados desde una biblioteca de símbolos | Vectoriales (zoom sin pérdida), seleccionables (`data-part`), coherentes en todos los diagramas y adaptados al tema claro/oscuro con `currentColor`. |
 | `localStorage` para el progreso | No hay backend y el alcance es individual. Limitaciones documentadas abajo y en la propia app. |
+| Verificación por lista de redes (`netlist`) | Cada práctica declara qué terminales deben quedar unidos; el mismo motor valida montajes de prácticas, ejercicios del laboratorio y pruebas automáticas. |
+| Compositores de esquemas (`diagrams-compose.js`) | Generan los circuitos con pila y los diagramas con Arduino a partir de filas, con los símbolos de la biblioteca. |
+| Explicaciones de código por fragmento (`find`) | Se mantienen alineadas con su línea aunque el código cambie; una prueba falla si el fragmento desaparece. |
 | Verificador de conexiones en lugar de simulador | Un simulador eléctrico completo excede el alcance. El verificador es exacto en lo que afirma (qué está conectado con qué) y la interfaz dice claramente que no simula. |
 
 ## Capas y responsabilidades
@@ -28,8 +31,11 @@ index.html
                    components.js  16 fichas de componentes
                    curriculum.js  9 módulos con estado
                    lessons-*.js   lecciones (diapositivas + actividades)
-                   practices.js   práctica A1 (plantilla completa)
-                   lab.js         ejercicios del verificador
+                   practices.js   registro de prácticas y práctica A1
+                   lab.js         3 ejercicios del verificador
+                   diagrams-compose.js  compositores de esquemas (pila y Arduino)
+                   lessons-m2b-m3b-m4.js, lessons-m6.js, lessons-m7.js, lessons-m8.js
+                   practices-m5.js (E1–E8), practices-m7-m9.js (A2–A4, P1–P7)
   └─ js/views      shell.js            índices, medios, cálculo de progreso, montaje de vistas
                    home.js             panel principal y módulos
                    lesson.js           visor de diapositivas
@@ -56,7 +62,14 @@ El motor implementa seis tipos técnicos; la etiqueta pedagógica (`kind`) indic
 
 ## Modelo de la protoboard
 
-Media protoboard de 30 columnas. Cada orificio pertenece a una red interna: `T<col>` (filas a–e), `B<col>` (filas f–j) o un carril (`R_tp`, `R_tn`, `R_bp`, `R_bn`). Los cables puente unen redes mediante unión-búsqueda. Después se comprueba la topología esperada (`led-series`: 5V → resistencia → ánodo → cátodo → GND, con la resistencia a cualquier lado del LED). Los carriles se modelan continuos; la interfaz advierte que algunas protoboards largas los tienen partidos.
+Media protoboard de 30 columnas. Cada orificio pertenece a una red interna: `T<col>` (filas a–e), `B<col>` (filas f–j) o un carril (`R_tp`, `R_tn`, `R_bp`, `R_bn`). Los cables puente unen redes mediante unión-búsqueda. Las conexiones fijas (5V, GND, pines de la placa, fuentes externas) tienen nombre, y dos conexiones distintas unidas se señalan como cortocircuito.
+
+Después se comprueba la topología esperada:
+
+- `led-series` (ejercicio original): 5V → resistencia → ánodo → cátodo → GND, con la resistencia a cualquier lado del LED.
+- `netlist` (general): lista de grupos de terminales que deben formar una sola red; dos grupos nunca pueden compartir red. Detecta componentes polarizados invertidos, conexiones que faltan y conexiones que sobran, con un mensaje que nombra los terminales.
+
+Los carriles se modelan continuos; la interfaz advierte que algunas protoboards largas los tienen partidos.
 
 ## Persistencia
 
@@ -66,6 +79,13 @@ Clave `circuitoBase.progreso.v1` con un campo `schema`. Limitaciones:
 - Se pierde al borrar los datos del sitio o en ventanas privadas.
 - Si el almacenamiento falla, la app sigue funcionando en memoria y muestra un aviso.
 - El panel de progreso permite ver y copiar una copia de seguridad en JSON (no hay importación todavía).
+
+## Pruebas automáticas
+
+- `tests/content.test.js` y `tests/engine.test.js` (Node): contenido, cálculos, verificador, almacenamiento y evaluadores.
+- `tests/compile_sketches.py`: compila cada sketch con avr-gcc y ArduinoCore-avr y comprueba que cabe en la memoria del Uno.
+- `tests/e2e.py` (Playwright): recorre todas las rutas en escritorio y móvil, e interactúa con lecciones, laboratorio, prácticas y progreso.
+- `.github/workflows/pages.yml`: ejecuta las tres suites y despliega en GitHub Pages solo si todas pasan.
 
 ## Cómo añadir contenido
 

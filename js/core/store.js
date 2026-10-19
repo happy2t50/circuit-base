@@ -103,6 +103,10 @@
         const p = (state.practices[id] = Object.assign({ checklist: {}, completed: false }, state.practices[id]));
         p.checklist[item] = !!value; save();
       },
+      setPracticeChoice(id, choice) {
+        const p = (state.practices[id] = Object.assign({ checklist: {}, completed: false }, state.practices[id]));
+        p.choice = choice; log('practica', id, 'opción elegida: ' + choice); save();
+      },
       completePractice(id, detail) {
         const p = (state.practices[id] = Object.assign({ checklist: {}, completed: false }, state.practices[id]));
         p.completed = true; p.completedAt = Date.now();

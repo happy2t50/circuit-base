@@ -19,7 +19,7 @@ Están en la lección *Seguridad eléctrica* (Módulo 1) y se recuerdan en el pa
 
 ## Comprobación previa obligatoria
 
-Cada práctica incluye una lista de verificación adaptada a su circuito. El botón "Marcar práctica como completada" permanece desactivado hasta marcar todos los puntos. Para la práctica A1:
+Cada una de las 19 prácticas y proyectos incluye una lista de verificación adaptada a su circuito. El botón "Marcar práctica como completada" permanece desactivado hasta marcar todos los puntos. Para la práctica A1:
 
 - USB desconectado mientras se revisa.
 - Resistencia de 220 Ω (rojo, rojo, marrón, oro).
@@ -32,4 +32,7 @@ Cada práctica incluye una lista de verificación adaptada a su circuito. El bot
 - El **verificador de protoboard** comprueba conexiones, no simula tensiones ni corrientes. Un montaje "correcto" en el verificador puede fallar en la realidad por un componente dañado, un falso contacto o un valor equivocado de resistencia.
 - Las **calculadoras** usan valores típicos (tensión directa de LED por color). Los valores reales dependen del componente: consulta su hoja de datos.
 - La **calculadora de LED** rechaza corrientes mayores de 20 mA.
-- Las advertencias sobre relés y motores explican por qué necesitan transistor, diodo y a menudo alimentación independiente. Las prácticas con esas cargas (Módulo 8) aún no están implementadas.
+- Relés y motores: el Módulo 8 explica por qué necesitan transistor, diodo y a menudo alimentación independiente. El relé se trata solo en teoría (sin práctica con carga) y nunca con tensión de red.
+- Servomotor (P6): se alimenta con una fuente externa de 5 V con GND común; la lista de verificación de la práctica lo exige.
+- Zumbadores: el activo se alimenta desde el pin 5V (E8); el pasivo se conecta a un pin con una resistencia de 100 Ω en serie (P5).
+- Sensores de 5 V en placas de 3,3 V (HC-SR04): se advierte que el pin Echo necesita adaptación de nivel.

@@ -124,5 +124,13 @@
     ]
   };
 
-  CB.practices = { list: [A1], byId: { [A1.id]: A1 } };
+  const list = [], byId = {};
+  function add(p) {
+    if (byId[p.id]) throw new Error('Práctica duplicada: ' + p.id);
+    list.push(p); byId[p.id] = p;
+  }
+  /** Prácticas agrupadas por módulo, en orden de aparición. */
+  function byModule(moduleId) { return list.filter((p) => p.module === moduleId); }
+  CB.practices = { list, byId, add, byModule };
+  add(A1);
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -204,3 +204,104 @@ test('práctica A1: plantilla completa y código válido para Arduino Uno R3', (
   assert.ok(p.calculations.join(' ').includes('13,6 mA'));
   assert.match(p.tinkercad.url, /^https:\/\/www\.tinkercad\.com\//);
 });
+
+/* ---------------------------------------------------------------- Fases 5–8 */
+const lineOf = (sketch, find) => sketch.split('\n').findIndex((l) => l.includes(find));
+
+test('fases 5–8: los nueve módulos tienen contenido navegable', () => {
+  CB.modules.forEach((m) => {
+    const n = (m.lessons || []).length + CB.practices.byModule(m.id).length;
+    assert.ok(n > 0, m.id + ' no tiene lecciones ni prácticas');
+    assert.equal(m.status, 'available', m.id);
+  });
+  assert.equal(CB.practices.byModule('m5').length, 8, 'Módulo 5: ocho prácticas');
+  assert.equal(CB.practices.byModule('m9').length, 7, 'Módulo 9: siete proyectos');
+});
+
+test('prácticas: plantilla completa según su tipo y referencias válidas', () => {
+  const ids = new Set(CB.practices.list.map((p) => p.id));
+  const codes = new Set();
+  CB.practices.list.forEach((p) => {
+    assert.ok(!codes.has(p.code), 'código repetido ' + p.code); codes.add(p.code);
+    ['id', 'code', 'module', 'title', 'level', 'minutes', 'objective', 'questions', 'checklist'].forEach((f) => assert.ok(p[f], p.id + ' sin ' + f));
+    assert.ok(p.checklist.length >= 3, p.id + ': lista de verificación corta');
+    if (p.type === 'final') {
+      assert.ok(p.options.length >= 3, 'el proyecto final ofrece varias opciones');
+      p.options.forEach((o) => {
+        ['requirements', 'materials', 'pins', 'reuse'].forEach((f) => assert.ok(o[f] && o[f].length, p.id + '/' + o.id + ' sin ' + f));
+        o.reuse.forEach(([href]) => {
+          const [, kind, rid] = href.match(/^#\/(proyectos|leccion)\/(.+)$/) || [];
+          assert.ok(kind === 'proyectos' ? ids.has(rid) : CB.lessons.some((l) => l.id === rid), 'enlace roto ' + href);
+        });
+      });
+      assert.ok(p.evaluation.length >= 4 && p.milestones.length >= 4);
+      return;
+    }
+    ['materials', 'diagram', 'connections', 'calculations', 'expected', 'mistakes', 'tinkercad'].forEach((f) => assert.ok(p[f] && (Array.isArray(p[f]) ? p[f].length : true), p.id + ' sin ' + f));
+    assert.ok(CB.diagrams.byId[p.diagram], p.id + ': diagrama ' + p.diagram);
+    assert.ok(p.layout, p.id + ' sin vista de montaje');
+    (p.prerequisites || []).forEach((r) => assert.ok(r.lesson ? CB.lessons.some((l) => l.id === r.lesson) : ids.has(r.practice), p.id + ': prerrequisito roto'));
+    if (p.module === 'm9') ['planning', 'tests', 'evaluation'].forEach((f) => assert.ok(p[f] && p[f].length, p.id + ' (proyecto) sin ' + f));
+    if (p.module !== 'm5') assert.ok(p.sketch && p.codeExplain && p.codeExplain.length >= 2, p.id + ' sin código explicado');
+  });
+});
+
+test('montajes de TODAS las prácticas coinciden con su esquema (verificador de conexiones)', () => {
+  CB.practices.list.filter((p) => p.layout).forEach((p) => {
+    const r = CB.breadboard.evaluate(p.layout, p.layout.placement);
+    assert.equal(r.ok, true, p.id + ': ' + JSON.stringify(r.errors.map((e) => e.msg)));
+    // Ningún terminal de componente queda sin colocar
+    p.layout.pieces.filter((x) => !x.optional).forEach((x) => x.terminals.forEach((t) => assert.ok(p.layout.placement[x.id + '.' + t.id], p.id + ': falta ' + x.id + '.' + t.id)));
+  });
+});
+
+test('el verificador detecta errores en montajes de prácticas (LED invertido, cable que falta)', () => {
+  const p = CB.practices.byId['p1-semaforo'];
+  const rev = Object.assign({}, p.layout.placement, { 'LED2.A': 'c16', 'LED2.K': 'c14' });
+  assert.ok(CB.breadboard.evaluate(p.layout, rev).errors.some((e) => e.code === 'reversed'));
+  const open = Object.assign({}, p.layout.placement); delete open['J3.A']; delete open['J3.B'];
+  assert.ok(CB.breadboard.evaluate(p.layout, open).errors.some((e) => e.code === 'missing-link'));
+  const s = CB.practices.byId['p6-servo'];
+  const noGnd = Object.assign({}, s.layout.placement); delete noGnd['J1.A']; delete noGnd['J1.B'];
+  assert.ok(CB.breadboard.evaluate(s.layout, noGnd).errors.some((e) => /Servo/.test(e.msg)), 'sin GND común el servo queda señalado');
+});
+
+test('laboratorio: las tres soluciones de referencia son correctas', () => {
+  assert.equal(CB.labExercises.length, 3);
+  CB.labExercises.forEach((ex) => {
+    const r = CB.breadboard.evaluate(ex, ex.solution);
+    assert.equal(r.ok, true, ex.id + ': ' + JSON.stringify(r.errors));
+    assert.ok(ex.solutionText && ex.successText);
+  });
+});
+
+test('código Arduino: pines válidos del Uno R3, PWM correcto y explicaciones ancladas a líneas reales', () => {
+  const sketches = CB.practices.list.filter((p) => p.sketch).map((p) => ({ id: p.id, sketch: p.sketch, explain: p.codeExplain }))
+    .concat(CB.lessons.flatMap((l) => l.slides.filter((s) => s.code).map((s, i) => ({ id: l.id + '#' + i, sketch: s.code.sketch, explain: s.code.explain }))));
+  assert.ok(sketches.length >= 20, 'hay ' + sketches.length + ' sketches');
+  sketches.forEach(({ id, sketch, explain }) => {
+    assert.equal((sketch.match(/{/g) || []).length, (sketch.match(/}/g) || []).length, id + ': llaves');
+    assert.match(sketch, /void setup\(\)/, id); assert.match(sketch, /void loop\(\)/, id);
+    for (const m of sketch.matchAll(/const int (PIN_\w+) = (\d+);/g)) assert.ok(+m[2] >= 2 && +m[2] <= 13, id + ': pin digital ' + m[2]);
+    const pwmPins = {};
+    for (const m of sketch.matchAll(/const int (\w+) = (\d+);/g)) pwmPins[m[1]] = +m[2];
+    for (const m of sketch.matchAll(/analogWrite\((\w+)/g)) {
+      const pin = /^\d+$/.test(m[1]) ? +m[1] : pwmPins[m[1]];
+      assert.ok([3, 5, 6, 9, 10, 11].includes(pin), id + ': analogWrite en pin sin PWM (' + m[1] + ')');
+    }
+    if (/Servo /.test(sketch)) assert.match(sketch, /#include <Servo\.h>/, id);
+    (explain || []).forEach((e) => {
+      if (e.line) assert.ok(sketch.split('\n')[e.line - 1].trim(), id + ': línea ' + e.line);
+      else assert.ok(lineOf(sketch, e.find) >= 0, id + ': explicación sin línea: ' + e.find);
+      assert.ok(e.text && e.text.length > 10, id + ': explicación vacía');
+    });
+  });
+});
+
+test('servo y tone() no comparten temporizador con el PWM que se usa en el mismo sketch', () => {
+  CB.practices.list.filter((p) => p.sketch).forEach((p) => {
+    const s = p.sketch;
+    if (/Servo/.test(s)) assert.ok(!/analogWrite\((9|10|PIN_LED)/.test(s) || !/PIN_LED = (9|10)/.test(s), p.id + ': Servo desactiva PWM en 9 y 10');
+    if (/tone\(/.test(s)) assert.ok(!/analogWrite\((3|11)\b/.test(s), p.id + ': tone() desactiva PWM en 3 y 11');
+  });
+});

@@ -25,7 +25,7 @@
       const m = mp.module;
       const body = m.status === 'planned'
         ? '<p class="muted small">Temario: ' + U.esc(m.topics.join(' · ')) + '</p>'
-        : (mp.total ? S.bar(mp.pct, 'Progreso del módulo ' + m.n) + '<p class="small muted">' + mp.done + ' de ' + mp.total + ' lecciones</p>' : '<p class="small muted">Herramientas disponibles; lecciones en construcción.</p>');
+        : (mp.total ? S.bar(mp.pct, 'Progreso del módulo ' + m.n) + '<p class="small muted">' + mp.done + ' de ' + mp.total + ' completadas · ' + [mp.lessons ? mp.lessons + ' lecciones' : '', mp.practices ? mp.practices + (m.id === 'm9' ? ' proyectos' : ' prácticas') : ''].filter(Boolean).join(' y ') + '</p>' : '<p class="small muted">Herramientas disponibles; lecciones en construcción.</p>');
       const link = m.status === 'planned' ? '' : '<a class="card-link" href="#/modulos#' + m.id + '">Ver módulo<span class="sr-only"> ' + m.n + '</span></a>';
       return '<li class="module-card' + (m.status === 'planned' ? ' is-planned' : '') + '"><div class="module-num">' + String(m.n).padStart(2, '0') + '</div><div class="module-main"><div class="row-between"><h3>' + U.esc(m.title) + '</h3>' + S.statusPill(m.status) + '</div><p>' + U.esc(m.summary) + '</p>' + body + link + '</div></li>';
     }).join('');
@@ -67,13 +67,14 @@
           '<a href="#/leccion/' + l.id + '">' + U.esc(l.title) + '</a><span class="muted small">' + l.slides.length + ' diapositivas · ' + l.minutes + ' min · ' + solved + '/' + l.activities.length + ' actividades</span>' +
           (st.completed ? '<span class="sr-only">Completada</span>' : (st.slide ? '<span class="pill pill-info">En curso</span>' : '')) + '</li>';
       }).join('');
-      const extras = (m.extras || []).map((e) => '<li class="lesson-row extra"><span class="lesson-check" aria-hidden="true">→</span><a href="' + e.href + '">' + U.esc(e.label) + '</a></li>').join('');
+      const practiceRows = CB.practices.byModule(m.id).map((p) => '<li class="lesson-row extra' + (store.practice(p.id).completed ? ' is-done' : '') + '"><span class="lesson-check" aria-hidden="true">' + (store.practice(p.id).completed ? '✓' : '⚙') + '</span><a href="#/proyectos/' + p.id + '">' + (m.id === 'm9' ? 'Proyecto ' : 'Práctica ') + p.code + ': ' + U.esc(p.title) + '</a><span class="muted small">' + p.minutes + ' min · ' + U.esc(p.level) + '</span></li>').join('');
+      const extras = practiceRows + (m.extras || []).map((e) => '<li class="lesson-row extra"><span class="lesson-check" aria-hidden="true">→</span><a href="' + e.href + '">' + U.esc(e.label) + '</a></li>').join('');
       const topics = m.status !== 'available' && m.topics ? '<p class="small muted"><strong>Temario previsto:</strong> ' + U.esc(m.topics.join(' · ')) + '</p>' : '';
       const pending = m.pending ? '<p class="small muted"><strong>Pendiente:</strong> ' + U.esc(m.pending) + '</p>' : '';
       return '<section class="module-block" id="' + m.id + '" aria-labelledby="' + m.id + '-h"><header class="row-between"><h2 id="' + m.id + '-h"><span class="module-num inline">' + String(m.n).padStart(2, '0') + '</span> ' + U.esc(m.title) + '</h2>' + S.statusPill(m.status) + '</header>' +
         '<p>' + U.esc(m.summary) + '</p>' + (lessons || extras ? '<ol class="lesson-list">' + lessons + extras + '</ol>' : '') + topics + pending + '</section>';
     }).join('');
-    S.mount('<header class="page-head"><h1>Módulos</h1><p class="lead">Nueve módulos, de los fundamentos eléctricos a los proyectos con Arduino. Los marcados como “Planeado” muestran su temario y aún no tienen lecciones.</p></header>' + html, { title: 'Módulos', nav: 'modulos' });
+    S.mount('<header class="page-head"><h1>Módulos</h1><p class="lead">Nueve módulos, de los fundamentos eléctricos a los proyectos con Arduino. Cada módulo reúne sus lecciones y sus prácticas guiadas.</p></header>' + html, { title: 'Módulos', nav: 'modulos' });
     const anchor = (root.location.hash.split('#')[2] || '');
     if (anchor) { const el = document.getElementById(anchor); if (el) el.scrollIntoView(); }
   }

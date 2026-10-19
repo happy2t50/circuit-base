@@ -138,5 +138,7 @@
     return `<svg class="diagram" viewBox="${d.viewBox}" role="img" aria-labelledby="${tid} ${did}"><title id="${tid}">${d.title}</title><desc id="${did}">${d.desc}</desc>${d.svg}</svg>`;
   }
 
-  CB.diagrams = { list, byId, diagramSVG };
+  function add(d) { if (byId[d.id]) throw new Error('Diagrama duplicado: ' + d.id); list.push(d); byId[d.id] = d; }
+
+  CB.diagrams = { list, byId, diagramSVG, add, h: { wire, dot, txt, part, P } };
 })(typeof window !== 'undefined' ? window : globalThis);

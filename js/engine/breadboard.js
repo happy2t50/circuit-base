@@ -84,7 +84,7 @@
     const errors = [];
     const uf = makeUF();
     const occupied = {};
-    const fixedNets = { VCC: null, GND: null };
+    const fixedNets = {}; // nombre de red fija → red interna (p. ej. VCC → R_tp)
 
     exercise.fixed.forEach((f) => {
       const n = baseNet(f.hole);
@@ -118,17 +118,28 @@
       const a = placement[p.id + '.A'], b = placement[p.id + '.B'];
       if (a && b) uf.union(baseNet(a), baseNet(b));
     });
-    const netOf = (key) => { const hole = placement[key]; return hole ? uf.find(baseNet(hole)) : null; };
-    const VCC = uf.find(fixedNets.VCC), GND = uf.find(fixedNets.GND);
+    const netOf = (key) => {
+      if (fixedNets[key]) return uf.find(fixedNets[key]); // nombre de una conexión fija: 'VCC', 'GND', 'D8'…
+      const hole = placement[key];
+      return hole ? uf.find(baseNet(hole)) : null;
+    };
+    const VCC = fixedNets.VCC ? uf.find(fixedNets.VCC) : null;
+    const GND = fixedNets.GND ? uf.find(fixedNets.GND) : null;
 
-    // 3. Cortocircuito de la alimentación
-    if (VCC === GND) {
-      errors.push({ code: 'supply-short', msg: 'Cortocircuito: 5V y GND quedaron unidos directamente.', fix: 'Revisa los cables puente. Ningún cable debe ir del carril + al carril − (ni a una tira que ya esté unida al otro carril). En un circuito real esto calienta los cables y puede dañar la placa o la fuente.', terminals: [] });
-      return { ok: false, errors, netOf };
+    // 3. Dos conexiones fijas distintas unidas entre sí (5V con GND, o dos pines de la placa)
+    const names = Object.keys(fixedNets);
+    for (let i = 0; i < names.length; i++) {
+      for (let j = i + 1; j < names.length; j++) {
+        if (uf.find(fixedNets[names[i]]) === uf.find(fixedNets[names[j]])) {
+          const la = labelOfFixed(exercise, names[i]), lb = labelOfFixed(exercise, names[j]);
+          errors.push({ code: 'supply-short', msg: 'Cortocircuito: ' + la + ' y ' + lb + ' quedaron unidos directamente.', fix: 'Revisa los cables puente: ninguno debe unir esas dos conexiones (ni tiras que ya estén unidas a ellas). Entre 5V y GND esto calienta los cables y puede dañar la placa o la fuente; entre dos pines, uno puede forzar al otro.', terminals: [] });
+        }
+      }
     }
+    if (errors.length) return { ok: false, errors, netOf };
 
-    // 4. Componentes con ambas patas en la misma red
-    exercise.pieces.filter((p) => p.kind !== 'wire').forEach((p) => {
+    // 4. Componentes de dos patas con ambas en la misma red
+    exercise.pieces.filter((p) => p.kind !== 'wire' && p.terminals.length === 2).forEach((p) => {
       const [t1, t2] = p.terminals;
       if (netOf(p.id + '.' + t1.id) === netOf(p.id + '.' + t2.id)) {
         errors.push({ code: 'shorted-part', msg: p.name + ' tiene sus dos patas unidas eléctricamente (' + describeNet(pieceNet(p, t1.id)) + ').', fix: 'Las patas de un componente deben ir en tiras distintas. Si ambas están en la misma tira, la corriente rodea al componente y este no hace nada.', terminals: p.terminals.map((t) => p.id + '.' + t.id) });
@@ -142,7 +153,68 @@
     return { ok: errors.length === 0, errors, netOf };
   }
 
+  function labelOfFixed(ex, netName) {
+    const f = ex.fixed.find((x) => x.net === netName);
+    return f ? f.label : netName;
+  }
+
+  /** Nombre legible de un miembro de una red esperada: conexión fija o terminal de pieza. */
+  function memberLabel(ex, m) {
+    if (ex.fixed.some((f) => f.net === m)) return 'la conexión ' + labelOfFixed(ex, m);
+    const [pid, tid] = m.split('.');
+    const p = ex.pieces.find((x) => x.id === pid);
+    if (!p) return m;
+    const t = p.terminals.find((x) => x.id === tid);
+    return p.name + (p.terminals.length > 1 && t ? ' (' + t.label + ')' : '');
+  }
+
   const CHECKS = {
+    /**
+     * Verificación general por lista de redes: exercise.nets = [[miembros que deben quedar unidos], …].
+     * Un miembro es el nombre de una conexión fija ('VCC', 'GND', 'D8', 'A0'…) o 'PIEZA.terminal'.
+     * Cada grupo debe formar una sola red y dos grupos distintos nunca pueden compartir red.
+     * Para piezas polarizadas de dos patas detecta específicamente que estén invertidas.
+     */
+    netlist: function (ex, netOf, VCC, GND, errors) {
+      const groups = ex.nets;
+      const groupOf = (m) => groups.findIndex((g) => g.includes(m));
+      const netsExcept = (gi, skip) => new Set(groups[gi].filter((m) => m !== skip).map(netOf));
+      // a) Piezas polarizadas invertidas
+      const reversed = new Set();
+      ex.pieces.filter((p) => p.polarized && p.terminals.length === 2).forEach((p) => {
+        const a = p.id + '.' + p.terminals[0].id, b = p.id + '.' + p.terminals[1].id;
+        const ga = groupOf(a), gb = groupOf(b);
+        if (ga < 0 || gb < 0) return;
+        if (netsExcept(gb, b).has(netOf(a)) && netsExcept(ga, a).has(netOf(b))) {
+          reversed.add(a); reversed.add(b);
+          errors.push({ code: 'reversed', msg: p.name + ' está invertido: ' + p.terminals[0].label + ' y ' + p.terminals[1].label + ' están en el lugar del otro.', fix: p.reversedFix || 'Gíralo 180°. Los componentes polarizados solo funcionan en un sentido y algunos se dañan si se invierten.', terminals: [a, b] });
+        }
+      });
+      // b) Miembros que deberían estar unidos y no lo están
+      groups.forEach((g) => {
+        const members = g.filter((m) => !reversed.has(m));
+        if (members.length < 2) return;
+        const count = {};
+        members.forEach((m) => { const n = netOf(m); count[n] = (count[n] || 0) + 1; });
+        // La red de referencia es la de una conexión fija si la hay; si no, la más repetida.
+        const fixedMember = members.find((m) => !m.includes('.'));
+        const ref = fixedMember ? netOf(fixedMember) : Object.keys(count).sort((x, y) => count[y] - count[x])[0];
+        const refMember = members.find((m) => netOf(m) === ref);
+        members.filter((m) => netOf(m) !== ref).forEach((m) => {
+          errors.push({ code: 'missing-link', msg: memberLabel(ex, m) + ' debería estar conectado con ' + memberLabel(ex, refMember) + ' y no lo está.', fix: 'Colócalos en la misma tira (misma columna y mismo bloque) o únelos con un cable puente.', terminals: [m, refMember].filter((x) => x.includes('.')) });
+        });
+      });
+      // c) Grupos distintos que comparten red (conexiones que sobran)
+      for (let i = 0; i < groups.length; i++) {
+        for (let j = i + 1; j < groups.length; j++) {
+          const mi = groups[i].find((m) => !reversed.has(m) && groups[j].some((n) => !reversed.has(n) && netOf(n) === netOf(m)));
+          if (mi === undefined) continue;
+          const mj = groups[j].find((n) => netOf(n) === netOf(mi));
+          errors.push({ code: 'extra-link', msg: memberLabel(ex, mi) + ' y ' + memberLabel(ex, mj) + ' están unidos y no deberían.', fix: 'Sepáralos: deben ir en tiras distintas. Revisa también los cables puente que los conectan.', terminals: [mi, mj].filter((x) => x.includes('.')) });
+        }
+      }
+    },
+
     /** 5V → resistencia → LED (ánodo→cátodo) → GND, con la resistencia en cualquiera de los dos lados del LED. */
     'led-series': function (ex, netOf, VCC, GND, errors) {
       const R = [netOf('R1.1'), netOf('R1.2')];

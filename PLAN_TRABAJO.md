@@ -79,20 +79,20 @@ Principios: contenido como datos puros; motores sin dependencias del DOM (probab
 - Ejecutar todas las pruebas, corregir fallos, documentar resultados reales en `docs/PRUEBAS.md`.
 - README, ARQUITECTURA, CONTENIDO_EDUCATIVO, SEGURIDAD.
 
-### Fase 5 — Módulo 3 ampliado y Módulo 4 (siguiente)
+### Fase 5 — Módulo 3 ampliado y Módulo 4 ✅
 - Más ejercicios de interpretación (seguir recorrido, identificar nodos en circuitos mixtos), esquemas de pines.
 - Protoboard: ejercicios con pulsador y con dos LED en paralelo; explicación de carriles partidos.
 - Criterio: cada ejercicio del verificador detecta al menos: componente en cortocircuito (ambas patas en la misma tira), LED invertido, falta de resistencia, conexión ausente.
 
-### Fase 6 — Módulo 5 Primeros circuitos (pendiente)
+### Fase 6 — Módulo 5 Primeros circuitos ✅
 - 8 prácticas con la plantilla completa (objetivo … lista de verificación).
 - Prueba: cada práctica valida que todos los campos de la plantilla existen y los cálculos cuadran.
 
-### Fase 7 — Módulos 6 (Tinkercad) y 7 (Arduino desde cero) (pendiente)
+### Fase 7 — Módulos 6 (Tinkercad) y 7 (Arduino desde cero) ✅
 - Guías paso a paso de Tinkercad; lecciones de setup/loop, E/S digitales, analogRead, PWM, monitor serie, depuración.
 - Criterio: todo el código usa pines válidos de Arduino Uno R3 (PWM solo en 3, 5, 6, 9, 10, 11).
 
-### Fase 8 — Módulos 8 y 9 (pendiente)
+### Fase 8 — Módulos 8 y 9 ✅
 - Sensores y actuadores con advertencias de alimentación/librerías; 7 proyectos integradores.
 
 ## 4. Seguimiento
@@ -104,10 +104,21 @@ Principios: contenido como datos puros; motores sin dependencias del DOM (probab
 | 2026-10-18 | F3 | Completada | M1: 7 lecciones / 32 diapositivas / 25 actividades. 16 componentes, 21 símbolos, 8 diagramas, verificador de protoboard, práctica A1. Módulos 4–9 visibles con su estado, sin botones que lleven a pantallas vacías. |
 | 2026-10-18 | F4 | Completada | 37/37 pruebas de Node y 80/80 comprobaciones en navegador. 6 errores detectados y corregidos (ver docs/PRUEBAS.md). |
 
+| 2026-10-18 | F5 | Completada | M2: lección de transistores, relés y sensores. M3: circuitos mixtos y esquemas de pines. M4: 2 lecciones. Verificador generalizado con listas de redes; laboratorio con 3 ejercicios (LED, pulsador, paralelo). |
+| 2026-10-18 | F6 | Completada | M5: prácticas E1–E8 con montaje verificado. |
+| 2026-10-18 | F7 | Completada | M6: 2 lecciones de Tinkercad. M7: 5 lecciones con código y prácticas A2–A4. Compilación real de los sketches con avr-gcc y ArduinoCore-avr. |
+| 2026-10-18 | F8 | Completada | M8: 4 lecciones. M9: proyectos P1–P6 y proyecto final con 3 opciones. 44/44 pruebas de Node, 21/21 sketches compilados, 127/127 comprobaciones en navegador. |
+
+### Decisiones de las fases 5–8
+
+- **Verificación por lista de redes** (`check: 'netlist'`): cada práctica declara qué terminales deben quedar unidos. Un único verificador comprueba los 18 montajes y los ejercicios del laboratorio, y detecta componentes invertidos, conexiones que faltan y conexiones que sobran.
+- **Compositores de esquemas** (`diagrams-compose.js`): los circuitos con pila y los diagramas con Arduino se generan a partir de una descripción por filas, con los mismos símbolos de la biblioteca. Evita errores de coordenadas y mantiene el estilo.
+- **Explicaciones de código ancladas a texto** (`find`): una explicación apunta a un fragmento de la línea, no a su número; si el código cambia, la explicación sigue en su línea y la prueba falla si el fragmento desaparece.
+- **Compilación real en lugar de revisión estática**: `downloads.arduino.cc` no era accesible, así que se compila con avr-gcc y el núcleo oficial de Arduino descargados de GitHub, con los parámetros de la placa Uno.
+
 ### Pendientes conocidos
 
-- Verificar el enlace a Tinkercad (no accesible desde el entorno de desarrollo); marcado en la app como pendiente.
-- Compilar y cargar el sketch de A1 en una placa real.
+- Verificar los enlaces y pasos de Tinkercad (sitio no accesible desde el entorno de desarrollo; marcados en la app).
+- Cargar los sketches en una placa real y montar los circuitos físicamente.
 - Probar en Firefox, Safari y con lectores de pantalla.
-- Importar una copia de seguridad del progreso (hoy solo se puede exportar).
-- Fases 5–8.
+- Importar una copia de seguridad del progreso (hoy solo se exporta).

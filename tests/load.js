@@ -6,8 +6,10 @@ const fs = require('fs');
 const ORDER = [
   'core/util.js', 'core/store.js', 'core/router.js',
   'engine/ohm.js', 'engine/breadboard.js', 'engine/activities.js',
-  'content/symbols.js', 'content/diagrams.js', 'content/components.js', 'content/curriculum.js',
-  'content/lessons-m1.js', 'content/lessons-m2-m3.js', 'content/practices.js', 'content/lab.js'
+  'content/symbols.js', 'content/diagrams.js', 'content/diagrams-compose.js', 'content/components.js', 'content/curriculum.js',
+  'content/lessons-m1.js', 'content/lessons-m2-m3.js', 'content/practices.js', 'content/lab.js',
+  'content/lessons-m2b-m3b-m4.js', 'content/lessons-m6.js', 'content/lessons-m7.js', 'content/lessons-m8.js',
+  'content/practices-m5.js', 'content/practices-m7-m9.js'
 ];
 
 function load() {

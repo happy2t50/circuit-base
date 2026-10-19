@@ -5,7 +5,7 @@
   const U = CB.util, S = CB.shell, B = CB.breadboard, BV = CB.breadboardView;
 
   function lab(ctx) {
-    const ex = CB.labExercises[0];
+    let ex = CB.labExercises[0];
     S.mount(
       '<header class="page-head"><h1>Laboratorio</h1><p class="lead">Comprueba tus cálculos y tus montajes antes de conectar la alimentación.</p></header>' +
       '<section class="panel" aria-labelledby="ohm-h"><h2 id="ohm-h">Calculadora de ley de Ohm</h2>' +
@@ -28,7 +28,7 @@
       '<section class="panel" aria-labelledby="bb-h"><h2 id="bb-h">Verificador de protoboard</h2>' +
       '<aside class="callout info" role="note"><strong>Qué hace y qué no.</strong> Este verificador calcula qué orificios quedan unidos según la estructura interna de la protoboard y comprueba si tu montaje forma el circuito pedido. <strong>No es una simulación eléctrica</strong>: no calcula corrientes ni tensiones. Modelo: media protoboard con carriles continuos; en algunas protoboards largas los carriles están partidos a la mitad. Los cables 5V y GND de la placa se dibujan desde arriba y solo conectan donde terminan.</aside>' +
       '<div class="seg" role="group" aria-label="Modo"><button type="button" data-mode="build" aria-pressed="true">Montar ejercicio</button><button type="button" data-mode="explore" aria-pressed="false">Explorar conexiones internas</button></div>' +
-      '<div id="bb-build"><p><strong>Ejercicio:</strong> ' + U.esc(ex.goal) + '</p>' +
+      '<div id="bb-build"><label class="ex-pick" for="bb-ex">Ejercicio</label> <select id="bb-ex">' + CB.labExercises.map((e) => '<option value="' + e.id + '">' + U.esc(e.title) + '</option>').join('') + '</select><p id="bb-goal"></p>' +
       '<div class="bb-layout"><div class="bb-scroll" id="bb-board"></div><div class="bb-side"><h3>Piezas</h3><ol class="pieces" id="pieces"></ol>' +
       '<form id="hole-form" class="hole-form"><label for="hole-in">Colocar el terminal seleccionado en el orificio (p. ej. c9, tp3, tn12):</label><div class="row"><input id="hole-in" autocomplete="off" placeholder="c9"><button class="btn btn-ghost" type="submit">Colocar</button></div></form>' +
       '<p id="bb-status" class="bb-status" aria-live="polite"></p>' +
@@ -123,7 +123,7 @@
     U.$('#bb-solution').addEventListener('click', () => {
       placement = Object.assign({}, ex.solution); active = null; errHoles = [];
       drawPieces(); drawBoard();
-      result.innerHTML = '<div class="callout info"><strong>Una solución posible.</strong> R1 va del carril + (tp6) a b6; el ánodo del LED comparte la tira 6 (c6) y el cátodo va a c9; un cable une a9 con el carril −. Hay muchas otras colocaciones válidas: lo que importa es el camino 5V → resistencia → ánodo → cátodo → GND.</div>';
+      result.innerHTML = '<div class="callout info"><strong>Una solución posible.</strong> ' + ex.solutionText + '</div>';
     });
     U.$('#bb-check').addEventListener('click', () => {
       const res = B.evaluate(ex, placement);
@@ -131,12 +131,19 @@
       drawBoard();
       ctx.store.logLab(ex.id, res.ok, res.ok ? '' : res.errors[0].code);
       result.innerHTML = res.ok
-        ? '<div class="feedback is-ok"><strong>Montaje correcto.</strong> La corriente sale del carril + (5V), atraviesa la resistencia, entra al LED por el ánodo, sale por el cátodo y vuelve a GND. Con 220 Ω y un LED rojo circularían unos 13,6 mA. Recuerda: esto verifica conexiones, no simula el circuito.</div>'
-        : '<div class="feedback is-bad"><strong>Revisa el montaje:</strong><ul>' + res.errors.map((er) => '<li><b>' + U.esc(er.msg) + '</b><br>' + U.esc(er.fix) + '</li>').join('') + '</ul></div>';
+        ? '<div class="feedback is-ok"><strong>Montaje correcto.</strong> ' + ex.successText + ' Recuerda: esto verifica conexiones, no simula el circuito.</div>'
+        : '<div class="feedback is-bad"><strong>Revisa el montaje:</strong><ul>' + res.errors.slice(0, 5).map((er) => '<li><b>' + U.esc(er.msg) + '</b><br>' + U.esc(er.fix) + '</li>').join('') + '</ul></div>';
     });
-    active = 'R1.1';
-    setStatus('Empieza colocando: ' + termName(active) + '. Haz clic en un orificio.');
-    drawPieces(); drawBoard();
+    function loadExercise(id) {
+      ex = CB.labExercises.find((e) => e.id === id) || CB.labExercises[0];
+      placement = {}; errHoles = []; result.innerHTML = '';
+      active = ex.pieces[0].id + '.' + ex.pieces[0].terminals[0].id;
+      U.$('#bb-goal').innerHTML = '<strong>Objetivo:</strong> ' + U.esc(ex.goal);
+      setStatus('Empieza colocando: ' + termName(active) + '. Haz clic en un orificio.');
+      drawPieces(); drawBoard();
+    }
+    U.$('#bb-ex').addEventListener('change', (e) => loadExercise(e.target.value));
+    loadExercise(ex.id);
 
     /* ----- Exploración ----- */
     const exBoard = U.$('#bb-explore-board');
