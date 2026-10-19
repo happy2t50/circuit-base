@@ -117,6 +117,55 @@
       setLast(route, label) { state.last = { route, label, at: Date.now() }; save(); },
 
       exportJSON() { return JSON.stringify(state, null, 2); },
+      /**
+       * Restaura una copia de seguridad. Valida la estructura antes de tocar nada:
+       * si el texto no es válido, el progreso actual queda intacto y se lanza un Error con el motivo.
+       * mode 'replace' sustituye todo; 'merge' conserva lo mejor de ambos (lecciones completadas,
+       * actividades resueltas, prácticas completadas) y une los historiales.
+       */
+      importJSON(text, mode) {
+        let data;
+        try { data = JSON.parse(text); } catch (e) { throw new Error('El texto no es JSON válido. Copia la copia de seguridad completa, desde la primera { hasta la última }.'); }
+        if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('El contenido no es una copia de seguridad de Circuito Base.');
+        if (data.schema !== SCHEMA) throw new Error('La copia es de un formato distinto (schema ' + data.schema + '; se esperaba ' + SCHEMA + ').');
+        const isObj = (o) => o && typeof o === 'object' && !Array.isArray(o);
+        for (const k of ['lessons', 'activities', 'practices']) if (data[k] !== undefined && !isObj(data[k])) throw new Error('El campo "' + k + '" no tiene el formato esperado.');
+        if (data.history !== undefined && !Array.isArray(data.history)) throw new Error('El campo "history" no tiene el formato esperado.');
+        const clean = emptyState();
+        Object.entries(data.lessons || {}).forEach(([id, l]) => { if (isObj(l)) clean.lessons[id] = { slide: Number.isInteger(l.slide) && l.slide >= 0 ? l.slide : 0, completed: l.completed === true, completedAt: l.completedAt || null, visitedAt: l.visitedAt || null }; });
+        Object.entries(data.activities || {}).forEach(([id, a]) => { if (isObj(a)) clean.activities[id] = { attempts: Number.isInteger(a.attempts) && a.attempts >= 0 ? a.attempts : 0, correct: a.correct === true ? true : a.correct === false ? false : undefined, everCorrect: a.everCorrect === true, reflected: a.reflected === true, lastAt: a.lastAt || null, answer: typeof a.answer === 'string' || typeof a.answer === 'number' || typeof a.answer === 'boolean' || Array.isArray(a.answer) ? a.answer : undefined }; });
+        Object.entries(data.practices || {}).forEach(([id, p]) => {
+          if (!isObj(p)) return;
+          const checklist = {};
+          if (isObj(p.checklist)) Object.entries(p.checklist).forEach(([k, v]) => { checklist[k] = v === true; });
+          clean.practices[id] = { checklist, completed: p.completed === true, completedAt: p.completedAt || null, choice: typeof p.choice === 'string' ? p.choice : undefined };
+        });
+        clean.history = (data.history || []).filter((h) => isObj(h) && typeof h.kind === 'string' && typeof h.id === 'string').map((h) => ({ at: Number(h.at) || 0, kind: h.kind, id: h.id, detail: String(h.detail || '') })).slice(0, 200);
+        if (isObj(data.last) && typeof data.last.route === 'string' && data.last.route.startsWith('/')) clean.last = { route: data.last.route, label: String(data.last.label || ''), at: data.last.at || null };
+
+        if (mode === 'merge') {
+          Object.entries(clean.lessons).forEach(([id, l]) => {
+            const cur = state.lessons[id];
+            state.lessons[id] = cur ? Object.assign({}, cur, { completed: cur.completed || l.completed, completedAt: cur.completedAt || l.completedAt, slide: Math.max(cur.slide || 0, l.slide) }) : l;
+          });
+          Object.entries(clean.activities).forEach(([id, a]) => {
+            const cur = state.activities[id];
+            if (!cur || (a.lastAt || 0) > (cur.lastAt || 0)) state.activities[id] = Object.assign({}, a, { everCorrect: a.everCorrect || !!(cur && cur.everCorrect), reflected: a.reflected || !!(cur && cur.reflected) });
+            else cur.everCorrect = cur.everCorrect || a.everCorrect;
+          });
+          Object.entries(clean.practices).forEach(([id, p]) => {
+            const cur = state.practices[id];
+            state.practices[id] = cur ? { checklist: Object.assign({}, p.checklist, cur.checklist), completed: cur.completed || p.completed, completedAt: cur.completedAt || p.completedAt, choice: cur.choice || p.choice } : p;
+          });
+          const seen = new Set(state.history.map((h) => h.at + h.kind + h.id + h.detail));
+          state.history = state.history.concat(clean.history.filter((h) => !seen.has(h.at + h.kind + h.id + h.detail))).sort((x, y) => y.at - x.at).slice(0, 200);
+        } else {
+          state = clean;
+        }
+        log('importacion', 'progreso', mode === 'merge' ? 'copia combinada' : 'copia restaurada');
+        save();
+        return { lessons: Object.keys(clean.lessons).length, activities: Object.keys(clean.activities).length, practices: Object.keys(clean.practices).length };
+      },
       resetAll() { state = emptyState(); save(); }
     };
     return api;

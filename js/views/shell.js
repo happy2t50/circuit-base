@@ -26,13 +26,13 @@
   /* ---------- Medios ---------- */
   function media(m) {
     if (!m) return '';
-    if (m.diagram) return '<div class="diagram-wrap">' + CB.diagrams.diagramSVG(m.diagram) + '</div>';
+    if (m.diagram) return '<div class="diagram-wrap" tabindex="0" role="region" aria-label="Diagrama (desplázate en horizontal si no cabe)">' + CB.diagrams.diagramSVG(m.diagram) + '</div>';
     if (m.symbol) return CB.symbols.symbolSVG(m.symbol, { label: m.label });
     if (m.component) { const c = CB.components.byId[m.component]; return c ? '<div class="ill-wrap">' + c.ill + '</div>' : ''; }
     if (m.breadboard) {
       let b = m.breadboard;
       if (b.exercise) { const ex = CB.labExercises.find((e) => e.id === b.exercise); b = Object.assign({ fixed: ex.fixed, pieces: ex.pieces, placement: ex.solution }, b); }
-      return '<div class="bb-scroll">' + CB.breadboardView.render({ placement: b.placement || {}, fixed: b.fixed || [], pieces: b.pieces || [], highlight: b.highlight, label: b.label }) + '</div>' + (b.caption ? '<p class="small muted">' + b.caption + '</p>' : '');
+      return '<div class="bb-scroll" tabindex="0" role="region" aria-label="Protoboard (desplázate en horizontal si no cabe)">' + CB.breadboardView.render({ placement: b.placement || {}, fixed: b.fixed || [], pieces: b.pieces || [], highlight: b.highlight, label: b.label }) + '</div>' + (b.caption ? '<p class="small muted">' + b.caption + '</p>' : '');
     }
     if (m.html) return m.html;
     return '';

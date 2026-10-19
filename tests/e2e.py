@@ -1,6 +1,7 @@
 """Pruebas de extremo a extremo en Chromium real (Playwright).
 
-Uso:  python3 tests/e2e.py [--shots carpeta]
+Uso:  python3 tests/e2e.py [--browser chromium|firefox|webkit] [--shots carpeta]
+WebKit es el motor de Safari; Playwright lo ejecuta también en Linux.
 Abre index.html con file:// (el modo de uso principal: doble clic, sin servidor).
 Imprime cada comprobación con OK/FALLO y termina con código 1 si alguna falla.
 """
@@ -9,6 +10,7 @@ from playwright.sync_api import sync_playwright
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 URL = (ROOT / "index.html").as_uri()
+BROWSER = sys.argv[sys.argv.index("--browser") + 1] if "--browser" in sys.argv else "chromium"
 SHOTS = None
 if "--shots" in sys.argv:
     SHOTS = pathlib.Path(sys.argv[sys.argv.index("--shots") + 1]); SHOTS.mkdir(parents=True, exist_ok=True)
@@ -37,7 +39,8 @@ def go(page, route):
     page.wait_for_selector("#view h1")
 
 with sync_playwright() as p:
-    browser = p.chromium.launch()
+    browser = getattr(p, BROWSER).launch()
+    print(f"Navegador: {BROWSER} {browser.version}\n")
 
     # ------------------------------------------------------------ escritorio
     ctx = browser.new_context(viewport={"width": 1280, "height": 900})
@@ -205,6 +208,15 @@ with sync_playwright() as p:
     check("progreso: copia de seguridad JSON válida", data.get("schema") == 1 and "m1-ohm" in data["lessons"])
     page.click("#reset"); page.click("#reset-yes")
     check("progreso: borrar todo funciona", page.evaluate("Object.keys(CB.app.store.state.lessons).length") == 0)
+    backup = json.dumps(data)
+    page.click("#import"); page.fill("#import-text", "esto no es una copia")
+    page.click("#import-go")
+    check("importar: texto inválido se rechaza sin borrar nada", "No se restauró nada" in page.locator("#import-msg").inner_text(), page.locator("#import-msg").inner_text())
+    page.fill("#import-text", backup); page.check("input[name=import-mode][value=replace]"); page.click("#import-go")
+    restored = page.evaluate("CB.app.store.lesson('m1-ohm').completed")
+    check("importar: la copia restaura la lección completada", restored and "Copia restaurada" in page.locator("#import-msg").inner_text(), page.locator("#import-msg").inner_text())
+    page.reload(); page.wait_for_selector("#view h1")
+    check("importar: lo restaurado persiste tras recargar", page.evaluate("CB.app.store.lesson('m1-ohm').completed"))
 
     # ---------------- Fases 5–8
     go(page, "/modulos")
@@ -251,7 +263,9 @@ with sync_playwright() as p:
     ctx.close()
 
     # ------------------------------------------------------------ móvil + oscuro
-    mctx = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True, has_touch=True, color_scheme="dark")
+    # Firefox no admite la emulación de móvil de Playwright (is_mobile); allí se prueba solo el ancho de 390 px
+    mobile_opts = {} if BROWSER == "firefox" else {"is_mobile": True}
+    mctx = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=True, color_scheme="dark", **mobile_opts)
     m = mctx.new_page()
     merr = []
     m.on("pageerror", lambda e: merr.append(str(e)))
@@ -275,5 +289,5 @@ with sync_playwright() as p:
     browser.close()
 
 failed = [r for r in results if not r[1]]
-print(f"\n{len(results) - len(failed)} de {len(results)} comprobaciones superadas.")
+print(f"\n{len(results) - len(failed)} de {len(results)} comprobaciones superadas en {BROWSER}.")
 sys.exit(1 if failed else 0)

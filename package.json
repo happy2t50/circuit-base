@@ -1,0 +1,13 @@
+{
+  "name": "circuito-base",
+  "private": true,
+  "description": "Herramientas de prueba de Circuito Base. La aplicación no necesita dependencias para funcionar.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "simular": "node tests/simulate_sketches.js"
+  },
+  "devDependencies": {
+    "avr8js": "0.20.1",
+    "axe-core": "4.10.3"
+  }
+}

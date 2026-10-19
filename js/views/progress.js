@@ -12,8 +12,8 @@
     const st = store.state;
     const reviewByLesson = {};
     p.review.forEach((id) => { const src = index.activities[id].source; (reviewByLesson[src.title] = reviewByLesson[src.title] || { href: src.href, items: [] }).items.push(index.activities[id].act); });
-    const KIND = { leccion: 'Lección', actividad: 'Actividad', practica: 'Práctica', laboratorio: 'Laboratorio' };
-    const nameOf = (h) => h.kind === 'leccion' ? (index.lessonsById[h.id] || {}).title : h.kind === 'practica' ? (CB.practices.byId[h.id] || {}).title : h.kind === 'laboratorio' ? 'Verificador de protoboard' : (index.activities[h.id] ? index.activities[h.id].source.title : h.id);
+    const KIND = { leccion: 'Lección', actividad: 'Actividad', practica: 'Práctica', laboratorio: 'Laboratorio', importacion: 'Copia de seguridad' };
+    const nameOf = (h) => h.kind === 'leccion' ? (index.lessonsById[h.id] || {}).title : h.kind === 'practica' ? (CB.practices.byId[h.id] || {}).title : h.kind === 'laboratorio' ? 'Verificador de protoboard' : h.kind === 'importacion' ? 'progreso' : (index.activities[h.id] ? index.activities[h.id].source.title : h.id);
     const practiceHistory = st.history.filter((h) => h.kind === 'practica' || h.kind === 'laboratorio');
 
     S.mount(
@@ -26,14 +26,42 @@
       '<section class="panel"><h2>Actividad reciente</h2>' + (st.history.length ? '<ul class="history">' + st.history.slice(0, 25).map((h) => '<li><time>' + fmtDate(h.at) + '</time><span>' + KIND[h.kind] + ': ' + U.esc(nameOf(h) || h.id) + '</span><span class="muted">' + U.esc(h.detail) + '</span></li>').join('') + '</ul>' : '<p class="muted">Todavía no hay actividad registrada.</p>') + '</section>' +
       '<section class="panel"><h2>Dónde se guarda tu progreso</h2>' +
       '<p>' + (store.persistent ? 'Tu progreso se guarda en el <strong>almacenamiento local de este navegador</strong>, en este dispositivo.' : '<strong>El almacenamiento local no está disponible:</strong> el progreso solo dura mientras la pestaña esté abierta.') + '</p>' +
-      '<ul class="small"><li>No es una cuenta: no se sincroniza con otros dispositivos ni con otros navegadores.</li><li>Se pierde si borras los datos del sitio o usas una ventana privada.</li><li>Puedes copiar una copia de seguridad en texto (JSON).</li></ul>' +
-      '<div class="row"><button type="button" class="btn btn-ghost" id="export">Mostrar copia de seguridad</button><button type="button" class="btn btn-ghost danger" id="reset">Borrar todo el progreso</button></div>' +
+      '<ul class="small"><li>No es una cuenta: no se sincroniza con otros dispositivos ni con otros navegadores.</li><li>Se pierde si borras los datos del sitio o usas una ventana privada.</li><li>Puedes copiar una copia de seguridad en texto (JSON) y restaurarla aquí o en otro navegador.</li></ul>' +
+      '<div class="row"><button type="button" class="btn btn-ghost" id="export">Mostrar copia de seguridad</button><button type="button" class="btn btn-ghost" id="import">Restaurar una copia</button><button type="button" class="btn btn-ghost danger" id="reset">Borrar todo el progreso</button></div>' +
       '<div id="export-box" hidden><label for="export-text" class="small">Copia este texto y guárdalo en un archivo:</label><textarea id="export-text" rows="8" readonly></textarea><button type="button" class="btn-sm" id="copy-export">Copiar</button></div>' +
+      '<div id="import-box" hidden><label for="import-text" class="small">Pega aquí una copia de seguridad (o elige el archivo donde la guardaste):</label><textarea id="import-text" rows="6" placeholder="{ &quot;schema&quot;: 1, … }"></textarea>' +
+      '<div class="row"><label class="btn-sm file-pick" for="import-file">Elegir archivo…</label><input type="file" id="import-file" accept=".json,.txt,application/json,text/plain" class="sr-only"></div>' +
+      '<fieldset class="seg-field"><legend class="small">Al restaurar:</legend><label><input type="radio" name="import-mode" value="merge" checked> Combinar con mi progreso actual (no se pierde nada)</label><label><input type="radio" name="import-mode" value="replace"> Sustituir mi progreso actual</label></fieldset>' +
+      '<div class="row"><button type="button" class="btn" id="import-go">Restaurar</button><button type="button" class="btn btn-ghost" id="import-cancel">Cancelar</button></div><p id="import-msg" class="small" role="status" aria-live="polite"></p></div>' +
       '<div id="reset-box" class="callout danger" hidden><p>Se borrarán lecciones, respuestas, prácticas e historial de este navegador. No se puede deshacer.</p><div class="row"><button type="button" class="btn danger-solid" id="reset-yes">Sí, borrar todo</button><button type="button" class="btn btn-ghost" id="reset-no">Cancelar</button></div></div></section>',
       { title: 'Progreso', nav: 'progreso' }
     );
     U.$('#export').addEventListener('click', () => { U.$('#export-box').hidden = false; U.$('#export-text').value = store.exportJSON(); U.$('#export-text').select(); });
     U.$('#copy-export').addEventListener('click', (e) => { const b = e.currentTarget; try { navigator.clipboard.writeText(U.$('#export-text').value).then(() => { b.textContent = 'Copiado'; }, () => { U.$('#export-text').select(); b.textContent = 'Seleccionado: Ctrl+C'; }); } catch (err) { U.$('#export-text').select(); } });
+    U.$('#import').addEventListener('click', () => { U.$('#import-box').hidden = false; U.$('#import-text').focus(); });
+    U.$('#import-cancel').addEventListener('click', () => { U.$('#import-box').hidden = true; U.$('#import-msg').textContent = ''; });
+    U.$('#import-file').addEventListener('change', (e) => {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      if (f.size > 2 * 1024 * 1024) { U.$('#import-msg').textContent = 'El archivo es demasiado grande para ser una copia de seguridad (más de 2 MB).'; return; }
+      const r = new FileReader();
+      r.onload = () => { U.$('#import-text').value = String(r.result); U.$('#import-msg').textContent = 'Archivo cargado: ' + f.name + '. Revisa la opción y pulsa Restaurar.'; };
+      r.onerror = () => { U.$('#import-msg').textContent = 'No se pudo leer el archivo.'; };
+      r.readAsText(f);
+    });
+    U.$('#import-go').addEventListener('click', () => {
+      const mode = (U.$('input[name=import-mode]:checked') || {}).value || 'merge';
+      try {
+        const n = store.importJSON(U.$('#import-text').value, mode);
+        progressView(ctx);
+        U.$('#import-box').hidden = false;
+        U.$('#import-msg').textContent = (mode === 'merge' ? 'Copia combinada' : 'Copia restaurada') + ': ' + n.lessons + ' lecciones, ' + n.activities + ' actividades y ' + n.practices + ' prácticas en la copia.';
+        U.$('#import-msg').className = 'small ok-t';
+      } catch (err) {
+        U.$('#import-msg').textContent = 'No se restauró nada. ' + err.message;
+        U.$('#import-msg').className = 'small error';
+      }
+    });
     U.$('#reset').addEventListener('click', () => { U.$('#reset-box').hidden = false; U.$('#reset-no').focus(); });
     U.$('#reset-no').addEventListener('click', () => { U.$('#reset-box').hidden = true; });
     U.$('#reset-yes').addEventListener('click', () => { store.resetAll(); progressView(ctx); });

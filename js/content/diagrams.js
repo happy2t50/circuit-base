@@ -10,7 +10,7 @@
   const wire = (pts) => `<polyline class="wire" points="${pts.map((p) => p.join(',')).join(' ')}"/>`;
   const dot = (x, y) => `<circle class="node" cx="${x}" cy="${y}" r="4.5"/>`;
   const txt = (x, y, s, cls) => `<text x="${x}" y="${y}" class="${cls || 'dg-label'}">${s}</text>`;
-  const part = (id, label, inner) => `<g data-part="${id}" aria-label="${label}">${inner}</g>`;
+  const part = (id, label, inner) => `<g data-part="${id}" data-label="${label}">${inner}</g>`;
   const P = (id, x, y, rot, sc) => S.place(id, x, y, rot, sc, 'class="placed"');
 
   /* Lazo básico: batería a la izquierda, resistencia arriba, LED a la derecha. */

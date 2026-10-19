@@ -36,14 +36,14 @@
     add('Objetivo', '<p>' + U.esc(p.objective) + '</p>' + (p.prerequisites && p.prerequisites.length ? '<h3>Conocimientos previos</h3><ul>' + p.prerequisites.map((r) => '<li>' + (r.lesson ? '<a href="#/leccion/' + r.lesson + '">' + U.esc(r.text) + '</a>' + (store.lesson(r.lesson).completed ? ' <span class="pill pill-ok">✓</span>' : '') : r.practice ? '<a href="#/proyectos/' + r.practice + '">' + U.esc(r.text) + '</a>' : U.esc(r.text)) + '</li>').join('') + '</ul>' : ''));
     if (p.planning) add('Planificación', '<ol>' + p.planning.map((x) => '<li>' + U.esc(x) + '</li>').join('') + '</ol>');
     add('Materiales', '<ul class="check">' + p.materials.map((m) => '<li>' + U.esc(m) + '</li>').join('') + '</ul>');
-    add('Diagrama eléctrico', '<div class="diagram-wrap">' + CB.diagrams.diagramSVG(p.diagram) + '</div>' + (p.diagramNote ? '<p class="small muted">' + p.diagramNote + '</p>' : ''));
-    if (p.layout) add('Vista del montaje', '<p class="small muted">Ilustración de una colocación válida, comprobada con el verificador de conexiones (no es una simulación eléctrica). Los cables que llegan desde ' + (p.sketch ? 'la placa' : 'la fuente') + ' se dibujan desde arriba y solo conectan en el orificio donde terminan.</p><div class="bb-scroll">' + CB.breadboardView.render({ placement: p.layout.placement, fixed: p.layout.fixed, pieces: p.layout.pieces, label: 'Montaje de la práctica ' + p.code }) + '</div>');
+    add('Diagrama eléctrico', '<div class="diagram-wrap" tabindex="0" role="region" aria-label="Diagrama (desplázate en horizontal si no cabe)">' + CB.diagrams.diagramSVG(p.diagram) + '</div>' + (p.diagramNote ? '<p class="small muted">' + p.diagramNote + '</p>' : ''));
+    if (p.layout) add('Vista del montaje', '<p class="small muted">Ilustración de una colocación válida, comprobada con el verificador de conexiones (no es una simulación eléctrica). Los cables que llegan desde ' + (p.sketch ? 'la placa' : 'la fuente') + ' se dibujan desde arriba y solo conectan en el orificio donde terminan.</p><div class="bb-scroll" tabindex="0" role="region" aria-label="Protoboard (desplázate en horizontal si no cabe)">' + CB.breadboardView.render({ placement: p.layout.placement, fixed: p.layout.fixed, pieces: p.layout.pieces, label: 'Montaje de la práctica ' + p.code }) + '</div>');
     add('Lista de conexiones', '<ol>' + p.connections.map((c) => '<li>' + U.esc(c) + '</li>').join('') + '</ol>');
     add('Cálculos', '<ol>' + p.calculations.map((c) => '<li>' + U.esc(c) + '</li>').join('') + '</ol>' + (p.table ? table(p.table) : ''));
     if (p.sketch) add('Código', S.codeBlock(p.sketch, p.codeExplain, 'practica_' + p.code.toLowerCase() + '.ino') + (p.libraries ? '<p class="small"><strong>Librerías:</strong> ' + U.esc(p.libraries) + '</p>' : '') + '<p class="small">Para cargarlo: Herramientas → Placa → Arduino Uno; Herramientas → Puerto → el de tu placa; botón Subir (→).</p>');
     add('Resultado esperado', '<p>' + U.esc(p.expected) + '</p>');
-    if (p.tests) add('Pruebas', '<div class="table-scroll"><table class="units"><thead><tr><th>#</th><th>Prueba</th><th>Resultado esperado</th></tr></thead><tbody>' + p.tests.map((t, i) => '<tr><td>' + (i + 1) + '</td><td>' + U.esc(t.step) + '</td><td>' + U.esc(t.expected) + '</td></tr>').join('') + '</tbody></table></div>');
-    add(p.tests ? 'Diagnóstico' : 'Errores frecuentes', '<div class="table-scroll"><table class="units"><thead><tr><th>Síntoma</th><th>Causa probable</th><th>Solución</th></tr></thead><tbody>' + p.mistakes.map((m) => '<tr><td>' + U.esc(m.symptom) + '</td><td>' + U.esc(m.cause) + '</td><td>' + U.esc(m.fix) + '</td></tr>').join('') + '</tbody></table></div>');
+    if (p.tests) add('Pruebas', '<div class="table-scroll" tabindex="0" role="region" aria-label="Tabla (desplázate en horizontal si no cabe)"><table class="units"><thead><tr><th>#</th><th>Prueba</th><th>Resultado esperado</th></tr></thead><tbody>' + p.tests.map((t, i) => '<tr><td>' + (i + 1) + '</td><td>' + U.esc(t.step) + '</td><td>' + U.esc(t.expected) + '</td></tr>').join('') + '</tbody></table></div>');
+    add(p.tests ? 'Diagnóstico' : 'Errores frecuentes', '<div class="table-scroll" tabindex="0" role="region" aria-label="Tabla (desplázate en horizontal si no cabe)"><table class="units"><thead><tr><th>Síntoma</th><th>Causa probable</th><th>Solución</th></tr></thead><tbody>' + p.mistakes.map((m) => '<tr><td>' + U.esc(m.symptom) + '</td><td>' + U.esc(m.cause) + '</td><td>' + U.esc(m.fix) + '</td></tr>').join('') + '</tbody></table></div>');
     add('Preguntas de comprobación', '<div id="questions"></div>');
     if (p.evaluation) add('Evaluación', rubric(p.evaluation));
     if (p.tinkercad) add('Práctica en Tinkercad Circuits', '<p class="small muted">' + U.esc(p.tinkercad.status) + '</p><p><a href="' + p.tinkercad.url + '" target="_blank" rel="noopener">Abrir Tinkercad Circuits (sitio externo)</a></p><ol>' + p.tinkercad.steps.map((s) => '<li>' + U.esc(s) + '</li>').join('') + '</ol>');
@@ -92,7 +92,7 @@
     function detail(o) {
       return '<section class="panel"><h2>2. Requisitos: ' + U.esc(o.title) + '</h2><ul>' + o.requirements.map((r) => '<li>' + U.esc(r) + '</li>').join('') + '</ul>' +
         '<h3>Materiales</h3><ul class="check">' + o.materials.map((m) => '<li>' + U.esc(m) + '</li>').join('') + '</ul>' +
-        '<h3>Pines sugeridos (Arduino Uno R3)</h3><div class="table-scroll"><table class="units"><thead><tr><th>Elemento</th><th>Conexión</th></tr></thead><tbody>' + o.pins.map((x) => '<tr><td>' + U.esc(x[0]) + '</td><td>' + U.esc(x[1]) + '</td></tr>').join('') + '</tbody></table></div>' +
+        '<h3>Pines sugeridos (Arduino Uno R3)</h3><div class="table-scroll" tabindex="0" role="region" aria-label="Tabla (desplázate en horizontal si no cabe)"><table class="units"><thead><tr><th>Elemento</th><th>Conexión</th></tr></thead><tbody>' + o.pins.map((x) => '<tr><td>' + U.esc(x[0]) + '</td><td>' + U.esc(x[1]) + '</td></tr>').join('') + '</tbody></table></div>' +
         '<h3>Partes que puedes reutilizar</h3><ul>' + o.reuse.map((r) => '<li><a href="' + r[0] + '">' + U.esc(r[1]) + '</a></li>').join('') + '</ul>' +
         (o.warnings ? S.safetyNote(o.warnings) : '') + '</section>';
     }
@@ -122,10 +122,10 @@
     U.$all('[data-scroll]').forEach((a) => a.addEventListener('click', (e) => { e.preventDefault(); const t = document.getElementById(a.dataset.scroll); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
   }
   function table(t) {
-    return '<div class="table-scroll"><table class="units"><thead><tr>' + t.head.map((h) => '<th>' + U.esc(h) + '</th>').join('') + '</tr></thead><tbody>' + t.rows.map((r) => '<tr>' + r.map((c) => '<td>' + U.esc(c) + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>';
+    return '<div class="table-scroll" tabindex="0" role="region" aria-label="Tabla (desplázate en horizontal si no cabe)"><table class="units"><thead><tr>' + t.head.map((h) => '<th>' + U.esc(h) + '</th>').join('') + '</tr></thead><tbody>' + t.rows.map((r) => '<tr>' + r.map((c) => '<td>' + U.esc(c) + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>';
   }
   function rubric(rows) {
-    return '<div class="table-scroll"><table class="units"><thead><tr><th>Criterio</th><th>Logrado</th><th>En proceso</th></tr></thead><tbody>' + rows.map((r) => '<tr><td><strong>' + U.esc(r.criterion) + '</strong></td><td>' + U.esc(r.good) + '</td><td>' + U.esc(r.partial) + '</td></tr>').join('') + '</tbody></table></div>';
+    return '<div class="table-scroll" tabindex="0" role="region" aria-label="Tabla (desplázate en horizontal si no cabe)"><table class="units"><thead><tr><th>Criterio</th><th>Logrado</th><th>En proceso</th></tr></thead><tbody>' + rows.map((r) => '<tr><td><strong>' + U.esc(r.criterion) + '</strong></td><td>' + U.esc(r.good) + '</td><td>' + U.esc(r.partial) + '</td></tr>').join('') + '</tbody></table></div>';
   }
   function pager(p) {
     const list = CB.practices.list, i = list.indexOf(p);

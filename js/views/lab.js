@@ -29,12 +29,12 @@
       '<aside class="callout info" role="note"><strong>Qué hace y qué no.</strong> Este verificador calcula qué orificios quedan unidos según la estructura interna de la protoboard y comprueba si tu montaje forma el circuito pedido. <strong>No es una simulación eléctrica</strong>: no calcula corrientes ni tensiones. Modelo: media protoboard con carriles continuos; en algunas protoboards largas los carriles están partidos a la mitad. Los cables 5V y GND de la placa se dibujan desde arriba y solo conectan donde terminan.</aside>' +
       '<div class="seg" role="group" aria-label="Modo"><button type="button" data-mode="build" aria-pressed="true">Montar ejercicio</button><button type="button" data-mode="explore" aria-pressed="false">Explorar conexiones internas</button></div>' +
       '<div id="bb-build"><label class="ex-pick" for="bb-ex">Ejercicio</label> <select id="bb-ex">' + CB.labExercises.map((e) => '<option value="' + e.id + '">' + U.esc(e.title) + '</option>').join('') + '</select><p id="bb-goal"></p>' +
-      '<div class="bb-layout"><div class="bb-scroll" id="bb-board"></div><div class="bb-side"><h3>Piezas</h3><ol class="pieces" id="pieces"></ol>' +
+      '<div class="bb-layout"><div class="bb-scroll" id="bb-board" tabindex="0" role="region" aria-label="Protoboard del ejercicio"></div><div class="bb-side"><h3>Piezas</h3><ol class="pieces" id="pieces"></ol>' +
       '<form id="hole-form" class="hole-form"><label for="hole-in">Colocar el terminal seleccionado en el orificio (p. ej. c9, tp3, tn12):</label><div class="row"><input id="hole-in" autocomplete="off" placeholder="c9"><button class="btn btn-ghost" type="submit">Colocar</button></div></form>' +
       '<p id="bb-status" class="bb-status" aria-live="polite"></p>' +
       '<div class="row"><button type="button" class="btn" id="bb-check">Comprobar montaje</button><button type="button" class="btn btn-ghost" id="bb-reset">Vaciar</button><button type="button" class="btn btn-ghost" id="bb-solution">Ver una solución</button></div>' +
       '</div></div><div id="bb-result" class="bb-result" aria-live="polite"></div></div>' +
-      '<div id="bb-explore" hidden><p>Haz clic en cualquier orificio: se resaltan todos los que están conectados con él por dentro.</p><div class="bb-scroll" id="bb-explore-board"></div><p id="explore-out" class="bb-status" aria-live="polite"></p></div>' +
+      '<div id="bb-explore" hidden><p>Haz clic en cualquier orificio: se resaltan todos los que están conectados con él por dentro.</p><div class="bb-scroll" id="bb-explore-board" tabindex="0" role="region" aria-label="Protoboard para explorar"></div><p id="explore-out" class="bb-status" aria-live="polite"></p></div>' +
       S.safetyNote('Si montas este circuito de verdad, hazlo con el USB desconectado y conéctalo solo cuando el verificador (y tu propia revisión) confirmen el montaje.') +
       '</section>',
       { title: 'Laboratorio', nav: 'laboratorio' }

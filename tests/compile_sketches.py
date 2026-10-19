@@ -9,6 +9,9 @@ Requisitos (rutas por variables de entorno):
   ARDUINO_CORE   copia de https://github.com/arduino/ArduinoCore-avr
   ARDUINO_LIBS   carpeta con las librerías Servo (arduino-libraries/Servo) y LiquidCrystal_I2C
 
+Opcional:
+  HEX_DIR        carpeta donde guardar el .hex de cada sketch (lo usa tests/simulate_sketches.js)
+
 Uso: python3 tests/compile_sketches.py     (termina con código 1 si alguno no compila)
 """
 import json, os, pathlib, re, subprocess, sys, tempfile
@@ -45,8 +48,8 @@ def compile_src(src, out, extra_inc):
 # Sketches desde el contenido de la app (Node lee los mismos archivos que el navegador)
 dump = subprocess.run(["node", "-e", """
 const CB = require('./tests/load').load();
-const out = CB.practices.list.filter(p => p.sketch).map(p => ({ id: 'práctica ' + p.code, sketch: p.sketch }));
-CB.lessons.forEach(l => l.slides.forEach((s, i) => { if (s.code) out.push({ id: 'lección ' + l.id + ' (diapositiva ' + (i + 1) + ')', sketch: s.code.sketch }); }));
+const out = CB.practices.list.filter(p => p.sketch).map(p => ({ id: 'práctica ' + p.code, key: p.code, sketch: p.sketch }));
+CB.lessons.forEach(l => l.slides.forEach((s, i) => { if (s.code) out.push({ id: 'lección ' + l.id + ' (diapositiva ' + (i + 1) + ')', key: l.id + '-' + (i + 1), sketch: s.code.sketch }); }));
 console.log(JSON.stringify(out));
 """], cwd=ROOT, capture_output=True, text=True, check=True)
 sketches = json.loads(dump.stdout)
@@ -89,6 +92,9 @@ for i, s in enumerate(sketches):
         elf = build / f"sketch{i}.elf"
         run([GCC / "avr-gcc", "-Os", "-Wl,--gc-sections", "-mmcu=atmega328p", "-o", elf, *objs, build / "core.a", "-lm"])
         sizes = run([GCC / "avr-size", "-A", elf])
+        if os.environ.get("HEX_DIR"):
+            hex_dir = pathlib.Path(os.environ["HEX_DIR"]); hex_dir.mkdir(parents=True, exist_ok=True)
+            run([GCC / "avr-objcopy", "-O", "ihex", "-R", ".eeprom", elf, hex_dir / (s["key"] + ".hex")])
         sec = {m.group(1): int(m.group(2)) for m in re.finditer(r"^(\.\w+)\s+(\d+)", sizes, re.M)}
         flash = sec.get(".text", 0) + sec.get(".data", 0)
         ram = sec.get(".data", 0) + sec.get(".bss", 0)

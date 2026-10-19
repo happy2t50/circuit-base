@@ -1,8 +1,10 @@
 # Prueba y publica Circuito Base en GitHub Pages en cada push a main.
-# Tres comprobaciones deben pasar antes de desplegar:
+# Todas estas comprobaciones deben pasar antes de desplegar:
 #   1. Contenido y motores (Node)
 #   2. Compilación real de todos los sketches para Arduino Uno R3 (avr-gcc + ArduinoCore-avr)
-#   3. Pruebas de extremo a extremo en Chromium (Playwright)
+#      y simulación de su comportamiento en un ATmega328P emulado (avr8js)
+#   3. Pruebas de extremo a extremo en Chromium, Firefox y WebKit (motor de Safari)
+#   4. Auditoría de accesibilidad WCAG 2.2 AA con axe-core
 name: Pruebas y despliegue
 
 on:
@@ -49,24 +51,51 @@ jobs:
           AVR_GCC_DIR: ${{ runner.temp }}/avr/avr-gcc-14.1.0-x64-linux
           ARDUINO_CORE: ${{ runner.temp }}/avr/ArduinoCore-avr
           ARDUINO_LIBS: ${{ runner.temp }}/avr
+          HEX_DIR: build-hex
         run: python3 tests/compile_sketches.py
+      - name: Instalar el emulador AVR (avr8js)
+        run: npm ci --no-audit --no-fund
+      - name: Simular el comportamiento de los sketches en un ATmega328P
+        run: node tests/simulate_sketches.js
 
   navegador:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Instalar Playwright y Chromium
+      - name: Instalar Playwright y ${{ matrix.browser }}
         run: |
           pip install playwright==1.56.0
+          python -m playwright install --with-deps ${{ matrix.browser }}
+      - name: Pruebas de extremo a extremo en ${{ matrix.browser }}
+        run: python tests/e2e.py --browser ${{ matrix.browser }}
+
+  accesibilidad:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Instalar axe-core, Playwright y Chromium
+        run: |
+          npm ci --no-audit --no-fund
+          pip install playwright==1.56.0
           python -m playwright install --with-deps chromium
-      - name: Pruebas de extremo a extremo
-        run: python tests/e2e.py
+      - name: Auditoría WCAG 2.2 AA (temas claro y oscuro)
+        run: python tests/a11y.py
 
   desplegar:
-    needs: [contenido, compilar, navegador]
+    needs: [contenido, compilar, navegador, accesibilidad]
     runs-on: ubuntu-latest
     environment:
       name: github-pages

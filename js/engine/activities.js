@@ -193,10 +193,13 @@
       body.innerHTML = '<p class="muted small">Haz clic (o usa Tab y Enter) sobre la parte del diagrama que responde la pregunta.</p>';
       const svgHost = U.$('.activity-media', wrap);
       const parts = U.$all('[data-part]', svgHost);
+      // Un SVG con botones dentro no puede ser role="img": pasa a ser un grupo con nombre.
+      U.$all('svg.diagram', svgHost).forEach((svg) => svg.setAttribute('role', 'group'));
       parts.forEach((p) => {
         p.classList.add('hotspot');
         p.setAttribute('tabindex', '0');
         p.setAttribute('role', 'button');
+        if (p.dataset.label) p.setAttribute('aria-label', p.dataset.label);
         const pick = () => {
           parts.forEach((q) => q.classList.remove('is-ok', 'is-bad'));
           const res = submit(p.dataset.part);

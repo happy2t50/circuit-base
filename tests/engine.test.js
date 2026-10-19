@@ -218,3 +218,48 @@ test('diagrama interactivo y reflexión', () => {
   assert.equal(A().evaluate(refl, 'corto').correct, false);
   assert.equal(A().evaluate(refl, 'El cobre conduce y el plástico aísla del exterior.').correct, true);
 });
+
+/* ---------- Importar copia de seguridad ---------- */
+test('importar: sustituye el progreso con una copia válida', () => {
+  const a = CB.createStore(memoryStorage());
+  a.completeLesson('m1-ohm'); a.recordActivity('m1-d2', true, '4.09'); a.setChecklist('e1-led-basico', 'off', true);
+  const backup = a.exportJSON();
+  const b = CB.createStore(memoryStorage());
+  b.completeLesson('m7-estructura');
+  const n = b.importJSON(backup, 'replace');
+  assert.equal(n.lessons, 1);
+  assert.equal(b.lesson('m1-ohm').completed, true);
+  assert.equal(b.lesson('m7-estructura').completed, false, 'replace descarta lo anterior');
+  assert.equal(b.activity('m1-d2').everCorrect, true);
+  assert.equal(b.practice('e1-led-basico').checklist.off, true);
+});
+
+test('importar: combinar conserva lo mejor de ambos', () => {
+  const a = CB.createStore(memoryStorage());
+  a.completeLesson('m1-ohm'); a.recordActivity('m1-d2', true, '4.09');
+  const b = CB.createStore(memoryStorage());
+  b.completeLesson('m7-estructura'); b.recordActivity('m1-d2', false, '1');
+  b.importJSON(a.exportJSON(), 'merge');
+  assert.equal(b.lesson('m1-ohm').completed, true);
+  assert.equal(b.lesson('m7-estructura').completed, true);
+  assert.equal(b.activity('m1-d2').everCorrect, true, 'una actividad resuelta en cualquiera de las dos queda resuelta');
+});
+
+test('importar: rechaza datos inválidos sin tocar el progreso actual', () => {
+  const s = CB.createStore(memoryStorage());
+  s.completeLesson('m1-ohm');
+  const before = s.exportJSON();
+  for (const bad of ['no es json', '[]', '{"schema":2}', '{"schema":1,"lessons":[1,2]}', '{"schema":1,"history":"x"}']) {
+    assert.throws(() => s.importJSON(bad, 'replace'), Error, bad);
+  }
+  assert.equal(s.exportJSON(), before);
+});
+
+test('importar: limpia tipos inesperados dentro de una copia', () => {
+  const s = CB.createStore(memoryStorage());
+  s.importJSON(JSON.stringify({ schema: 1, lessons: { x: { slide: -5, completed: 'sí' } }, activities: { y: { attempts: 'muchos', everCorrect: 1, answer: { a: 1 } } }, practices: { z: { checklist: { a: 'yes', b: true } } }, last: { route: 'javascript:alert(1)' } }), 'replace');
+  assert.deepEqual(s.lesson('x'), { slide: 0, completed: false, completedAt: null, visitedAt: null });
+  assert.equal(s.activity('y').attempts, 0); assert.equal(s.activity('y').everCorrect, false); assert.equal(s.activity('y').answer, undefined);
+  assert.deepEqual(s.practice('z').checklist, { a: false, b: true });
+  assert.equal(s.state.last, null, 'una ruta que no empieza por / se descarta');
+});
