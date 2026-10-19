@@ -9,8 +9,15 @@ Termina con código 1 si hay alguna infracción.
 Una auditoría automática detecta aproximadamente un tercio de los problemas de accesibilidad
 (contraste, nombres, roles, estructura). No sustituye a probar con un lector de pantalla.
 """
-import json, pathlib, sys
+import json, os, pathlib, sys
 from playwright.sync_api import sync_playwright
+
+if os.environ.get("GITHUB_ACTIONS"):  # un error inesperado también aparece como anotación en GitHub
+    _hook = sys.excepthook
+    def _annotate(t, v, tb):
+        print(f"::error title={pathlib.Path(__file__).name} excepción::{t.__name__}: {str(v)[:600]}".replace("\n", " "), flush=True)
+        _hook(t, v, tb)
+    sys.excepthook = _annotate
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 URL = (ROOT / "index.html").as_uri()
@@ -68,6 +75,8 @@ if not problems:
 for (scheme, rid), info in sorted(problems.items()):
     v = info["v"]
     print(f"FALLO [{scheme}] {rid} ({v['impact']}): {v['help']} — {len(info['where'])} pantallas, p. ej. {info['where'][0]}")
+    if os.environ.get("GITHUB_ACTIONS"):
+        print(f"::error title=axe {scheme} {rid}::{v['help']} — {info['where'][0]} — " + " | ".join(n['target'] + ': ' + n['summary'] for n in v['nodes'])[:600])
     for n in v["nodes"]:
         print(f"      {n['target']}: {n['summary']}")
 sys.exit(1)

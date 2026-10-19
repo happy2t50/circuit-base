@@ -5,8 +5,15 @@ WebKit es el motor de Safari; Playwright lo ejecuta también en Linux.
 Abre index.html con file:// (el modo de uso principal: doble clic, sin servidor).
 Imprime cada comprobación con OK/FALLO y termina con código 1 si alguna falla.
 """
-import sys, pathlib, json
+import sys, os, pathlib, json
 from playwright.sync_api import sync_playwright
+
+if os.environ.get("GITHUB_ACTIONS"):  # un error inesperado también aparece como anotación en GitHub
+    _hook = sys.excepthook
+    def _annotate(t, v, tb):
+        print(f"::error title={pathlib.Path(__file__).name} excepción::{t.__name__}: {str(v)[:600]}".replace("\n", " "), flush=True)
+        _hook(t, v, tb)
+    sys.excepthook = _annotate
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 URL = (ROOT / "index.html").as_uri()
@@ -19,6 +26,8 @@ results = []
 def check(name, cond, detail=""):
     results.append((name, bool(cond), detail))
     print(("OK    " if cond else "FALLO ") + name + (f"  — {detail}" if detail and not cond else ""))
+    if not cond and os.environ.get("GITHUB_ACTIONS"):  # visible como anotación en GitHub
+        print(f"::error title=e2e {BROWSER}::{name} — {str(detail)[:300]}".replace("\n", " "))
 
 ROUTES = ["/", "/modulos", "/leccion/m1-electricidad", "/leccion/m1-magnitudes", "/leccion/m1-circuitos", "/leccion/m1-ohm",
           "/leccion/m1-potencia", "/leccion/m1-multimetro", "/leccion/m1-seguridad", "/leccion/m2-identificar", "/leccion/m3-diagramas",
