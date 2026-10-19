@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Circuito Base</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Plataforma interactiva para aprender electrónica, circuitos y Arduino desde cero.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip" href="#view">Saltar al contenido</a>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="#/" aria-label="Circuito Base, inicio">
+      <svg viewBox="0 0 40 24" aria-hidden="true"><path d="M2 12h8l3-7 5 14 5-14 5 14 3-7h7" /></svg>
+      <span>Circuito Base</span>
+    </a>
+    <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="site-nav">Menú</button>
+    <nav class="site-nav" id="site-nav" aria-label="Principal">
+      <a href="#/" data-nav="inicio">Inicio</a>
+      <a href="#/modulos" data-nav="modulos">Módulos</a>
+      <a href="#/componentes" data-nav="componentes">Componentes</a>
+      <a href="#/simbolos" data-nav="simbolos">Símbolos</a>
+      <a href="#/laboratorio" data-nav="laboratorio">Laboratorio</a>
+      <a href="#/cuestionarios" data-nav="cuestionarios">Cuestionarios</a>
+      <a href="#/proyectos" data-nav="proyectos">Proyectos</a>
+      <a href="#/progreso" data-nav="progreso">Progreso</a>
+    </nav>
+  </div>
+</header>
+<main id="view" class="view" tabindex="-1"><p class="muted">Cargando…</p></main>
+<footer class="site-footer"><p>Circuito Base · Contenido educativo para corriente continua de baja tensión. El progreso se guarda solo en este navegador.</p></footer>
+<noscript><p class="callout danger">Esta aplicación necesita JavaScript activado.</p></noscript>
+
+<!-- Orden de carga: utilidades → motores → contenido → vistas → arranque -->
+<script src="js/core/util.js"></script>
+<script src="js/core/store.js"></script>
+<script src="js/core/router.js"></script>
+<script src="js/engine/ohm.js"></script>
+<script src="js/engine/breadboard.js"></script>
+<script src="js/engine/activities.js"></script>
+<script src="js/content/symbols.js"></script>
+<script src="js/content/diagrams.js"></script>
+<script src="js/content/components.js"></script>
+<script src="js/content/curriculum.js"></script>
+<script src="js/content/lessons-m1.js"></script>
+<script src="js/content/lessons-m2-m3.js"></script>
+<script src="js/content/practices.js"></script>
+<script src="js/content/lab.js"></script>
+<script src="js/views/shell.js"></script>
+<script src="js/views/breadboard-view.js"></script>
+<script src="js/views/home.js"></script>
+<script src="js/views/lesson.js"></script>
+<script src="js/views/library.js"></script>
+<script src="js/views/lab.js"></script>
+<script src="js/views/practice.js"></script>
+<script src="js/views/progress.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
