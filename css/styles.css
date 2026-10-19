@@ -254,7 +254,6 @@ svg.sym .dash { stroke-dasharray: 5 4; }
 [data-part].hotspot.is-ok { color: var(--ok); }
 [data-part].hotspot.is-bad { color: var(--bad); }
 [data-part].hotspot text { fill: currentColor; }
-[data-part].hotspot { pointer-events: bounding-box; }
 
 /* Ilustraciones de componentes (colores del objeto físico) */
 svg.ill { width: 100%; height: auto; display: block; }
@@ -532,4 +531,11 @@ svg.diagram .ext-tag { fill: var(--warn-soft); stroke: var(--warn); stroke-width
 .ok-t { color: var(--ok); }
 
 summary { min-height: 24px; padding-block: 3px; display: list-item; }
-.bb-scroll:focus-visible, .diagram-wrap:focus-visible, .table-scroll:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.bb-scroll:focus-visible, .diagram-wrap:focus-visible, .table-scroll:focus-visible, pre.code:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+/* Elementos de cuadrícula que contienen diagramas: sin esto el SVG (min-width 320px) ensancha la tarjeta en móvil */
+.activity, .slide-activities > *, .quiz-group > div > *, .slide-media, .activity-media { min-width: 0; }
+table.units th, table.units td { overflow-wrap: anywhere; hyphens: auto; }
+@media (max-width: 600px) { table.units { font-size: 0.85rem; } table.units th, table.units td { padding: 6px; } }
+/* Zona de clic invisible de cada parte de un diagrama interactivo (funciona igual en todos los navegadores) */
+svg.diagram rect.hit { fill: transparent; stroke: none; }

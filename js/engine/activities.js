@@ -226,5 +226,25 @@
     return wrap;
   }
 
-  CB.activities = { evaluate, render, labelOf, initialOrder, LABELS, KIND_LABELS };
+  /**
+   * Tras insertar una actividad en la página, añade a cada parte clicable de un diagrama un rectángulo
+   * invisible que cubre su caja. Así un cable fino o el hueco dentro de un símbolo también responden al
+   * clic en Chrome, Firefox y Safari (pointer-events: bounding-box solo existe en Chrome).
+   */
+  function afterMount(root) {
+    U.$all('[data-part].hotspot', root).forEach((g) => {
+      if (g.querySelector(':scope > rect.hit')) return;
+      let box;
+      try { box = g.getBBox(); } catch (e) { return; }
+      if (!box || !box.width && !box.height) return;
+      const pad = 6;
+      const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r.setAttribute('class', 'hit');
+      r.setAttribute('x', box.x - pad); r.setAttribute('y', box.y - pad);
+      r.setAttribute('width', box.width + pad * 2); r.setAttribute('height', box.height + pad * 2);
+      g.insertBefore(r, g.firstChild);
+    });
+  }
+
+  CB.activities = { afterMount, evaluate, render, labelOf, initialOrder, LABELS, KIND_LABELS };
 })(typeof window !== 'undefined' ? window : globalThis);

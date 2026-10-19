@@ -26,6 +26,9 @@ BROWSER = sys.argv[sys.argv.index("--browser") + 1] if "--browser" in sys.argv e
 TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
 
 def audit(page):
+    # Se audita con la página arriba: si no, la cabecera fija tapa parte de los botones superiores y
+    # axe lo cuenta como objetivo táctil pequeño, aunque la persona puede desplazarse para verlos.
+    page.evaluate("window.scrollTo(0, 0)")
     page.add_script_tag(content=AXE) if not page.evaluate("!!window.axe") else None
     res = page.evaluate("""async (tags) => {
         const r = await axe.run(document, { runOnly: { type: 'tag', values: tags }, resultTypes: ['violations'] });
@@ -37,8 +40,9 @@ problems = {}
 checked = 0
 with sync_playwright() as p:
     browser = getattr(p, BROWSER).launch()
-    for scheme in ("light", "dark"):
-        ctx = browser.new_context(viewport={"width": 1280, "height": 900}, color_scheme=scheme)
+    # Escritorio en tema claro y oscuro (contraste) y móvil en tema claro (desbordamientos, zonas desplazables)
+    for scheme, vp in (("light", (1280, 900)), ("dark", (1280, 900)), ("light-móvil", (390, 844))):
+        ctx = browser.new_context(viewport={"width": vp[0], "height": vp[1]}, color_scheme=scheme.split("-")[0])
         page = ctx.new_page()
         page.goto(URL + "#/"); page.wait_for_selector("#view h1")
         routes = page.evaluate("""() => {
@@ -68,7 +72,7 @@ with sync_playwright() as p:
         ctx.close()
     browser.close()
 
-print(f"axe-core en {BROWSER}: {checked} pantallas auditadas (temas claro y oscuro), reglas {', '.join(TAGS)}\n")
+print(f"axe-core en {BROWSER}: {checked} pantallas auditadas (claro y oscuro en escritorio, claro en móvil), reglas {', '.join(TAGS)}\n")
 if not problems:
     print("Sin infracciones.")
     sys.exit(0)

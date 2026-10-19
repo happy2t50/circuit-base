@@ -106,7 +106,9 @@
     ids.forEach((id) => {
       const entry = ctx.index.activities[id];
       if (!entry) { container.insertAdjacentHTML('beforeend', '<p class="error">Actividad no encontrada: ' + U.esc(id) + '</p>'); return; }
-      container.appendChild(CB.activities.render(entry.act, { store: ctx.store, getMedia: media, onResult: ctx.onResult }));
+      const el = CB.activities.render(entry.act, { store: ctx.store, getMedia: media, onResult: ctx.onResult });
+      container.appendChild(el);
+      CB.activities.afterMount(el);
     });
   }
 
@@ -127,7 +129,7 @@
     const id = 'code-' + Math.random().toString(36).slice(2, 8);
     explain = resolveExplain(sketch, explain);
     return '<div class="code-wrap" data-code="' + id + '"><div class="code-head"><span>' + U.esc(filename || 'sketch.ino') + ' · Arduino Uno R3</span><button type="button" class="btn-sm" data-copy="' + id + '">Copiar código</button></div>' +
-      '<pre class="code" id="' + id + '"><code>' + lines.map((ln, i) => '<span class="code-line" data-line="' + (i + 1) + '"><span class="ln">' + (i + 1) + '</span>' + U.esc(ln) + '</span>').join('') + '</code></pre>' +
+      '<pre class="code" id="' + id + '" tabindex="0" role="region" aria-label="Código de ' + U.esc(filename || 'sketch.ino') + ' (desplázate en horizontal si no cabe)"><code>' + lines.map((ln, i) => '<span class="code-line" data-line="' + (i + 1) + '"><span class="ln">' + (i + 1) + '</span>' + U.esc(ln) + '</span>').join('') + '</code></pre>' +
       (explain && explain.length ? '<ol class="explain">' + explain.map((e) => '<li data-for="' + e.line + '" tabindex="0"><span class="ln-ref">' + (Array.isArray(e.line) ? 'Líneas ' + e.line.join('–') : 'Línea ' + e.line) + '</span><p>' + e.text + '</p></li>').join('') + '</ol>' : '') + '</div>';
   }
   /** Activa copiar y resaltado en todos los bloques de código dentro de un contenedor. */
