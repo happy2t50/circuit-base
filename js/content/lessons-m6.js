@@ -4,7 +4,7 @@
   'use strict';
   const CB = (root.CB = root.CB || {});
   CB.lessons = CB.lessons || [];
-  const NOTE = '<p class="callout info">Circuito Base no abre, edita ni ejecuta proyectos de Tinkercad: no existe una integración. Trabajarás en <a href="https://www.tinkercad.com/circuits" target="_blank" rel="noopener">tinkercad.com/circuits</a> (enlace pendiente de verificación) con tu propia cuenta. Los nombres de menús descritos pueden cambiar con las actualizaciones del sitio.</p>';
+  const NOTE = '<p class="callout info">Circuito Base no abre, edita ni ejecuta proyectos de Tinkercad: no existe una integración. Trabajarás en <a href="https://www.tinkercad.com/circuits" target="_blank" rel="noopener">tinkercad.com/circuits</a> con tu propia cuenta (enlace comprobado el 19/10/2026). Si tu Tinkercad está en inglés: «Crear nuevo circuito» es «Create new Circuit», «Código» es «Code» e «Iniciar simulación» es «Start Simulation». Los menús pueden cambiar con las actualizaciones del sitio.</p>';
 
   CB.lessons.push(
     {
@@ -19,7 +19,7 @@
         { title: 'Cablear la protoboard',
           body: '<ul><li>Haz clic en un orificio o pin y luego en el destino: se crea un cable.</li><li>Haz clic en puntos intermedios para doblar el cable y que el montaje quede legible.</li><li>Cambia el color del cable en su inspector: usa la misma convención que en la vida real (rojo +, negro GND).</li><li>Al pasar el ratón sobre un orificio, Tinkercad resalta los orificios unidos con él: igual que el modo de exploración de nuestro laboratorio.</li></ul>' },
         { title: 'Simular y leer resultados',
-          body: '<ol><li>Pulsa <strong>Iniciar simulación</strong>.</li><li>Los LED se encienden, los motores giran y los multímetros muestran su lectura.</li><li>Si un componente recibe demasiada corriente, Tinkercad muestra un aviso sobre él: pasa el ratón para leerlo.</li><li>Para medir, añade un <strong>Multímetro</strong> y elige su modo (tensión, corriente o resistencia) en el inspector. Las reglas son las mismas: tensión en paralelo, corriente en serie.</li></ol>',
+          body: '<ol><li>Pulsa <strong>Iniciar simulación</strong> (Start Simulation).</li><li>Los LED se encienden, los motores giran y los multímetros muestran su lectura.</li><li>Si un componente recibe demasiada corriente, Tinkercad muestra un aviso sobre él: pasa el ratón para leerlo.</li><li>Para medir, añade un <strong>Multímetro</strong> y elige su modo (tensión, corriente o resistencia) en el inspector. Las reglas son las mismas: tensión en paralelo, corriente en serie.</li></ol>',
           activity: 'm6-a2' },
         { title: 'Modificar y diagnosticar',
           body: '<p>Detén la simulación antes de cambiar el circuito, igual que desconectarías la pila. Rutina de diagnóstico:</p><ol><li>¿Hay aviso de sobrecorriente? Revisa la resistencia de ese componente.</li><li>¿No pasa nada? Mide tensión en cada nodo desde el + hacia el −: donde desaparece la tensión está el corte.</li><li>¿Un LED no enciende? Comprueba su sentido (en Tinkercad el ánodo es la pata doblada).</li></ol>',

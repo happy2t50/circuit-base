@@ -103,16 +103,16 @@
     ],
     tinkercad: {
       url: 'https://www.tinkercad.com/circuits',
-      status: 'Enlace general a Tinkercad Circuits (pendiente de verificación: no se pudo comprobar en el entorno de desarrollo). La aplicación no abre ni ejecuta proyectos de Tinkercad: debes crearlos en su web con tu cuenta. Los nombres de menús pueden cambiar con las actualizaciones de Tinkercad.',
-      verified: false,
+      status: 'Pasos para reproducirlo en Tinkercad Circuits con tu cuenta; la aplicación no abre ni ejecuta proyectos de Tinkercad. Enlace comprobado el 19/10/2026. Si tu Tinkercad está en inglés, el botón «Código» es «Code» e «Iniciar simulación» es «Start Simulation». Los menús pueden cambiar con las actualizaciones del sitio.',
+      verified: true,
       steps: [
         'Entra a Tinkercad, inicia sesión y elige Circuitos → Crear nuevo circuito.',
         'En el panel de componentes (Básicos) arrastra un "Arduino Uno R3", una "Placa de pruebas pequeña", una "Resistencia" y un "LED".',
         'Selecciona la resistencia y en su inspector pon 220 Ω.',
         'Coloca la resistencia y el LED en la placa de pruebas como en la vista de montaje. El ánodo del LED en Tinkercad es la pata doblada.',
         'Haz clic en el pin 8 del Arduino y luego en el orificio de la tira de la resistencia para crear el cable; repite para GND.',
-        'Pulsa "Código", cambia de "Bloques" a "Texto" y sustituye el contenido por el código de esta práctica.',
-        'Pulsa "Iniciar simulación": el LED debe parpadear una vez por segundo. Pasa el ratón sobre el LED para ver avisos de corriente.'
+        'Pulsa «Código» (Code), cambia de «Bloques» (Blocks) a «Texto» (Text) y sustituye el contenido por el código de esta práctica.',
+        'Pulsa «Iniciar simulación» (Start Simulation): el LED debe parpadear una vez por segundo. Pasa el ratón sobre el LED para ver avisos de corriente.'
       ]
     },
     checklist: [

@@ -17,7 +17,7 @@
   const HCSR04 = (id) => ({ id, kind: 'module', short: 'HC-SR04', name: 'Sensor HC-SR04', terminals: [{ id: 'VCC', label: 'VCC' }, { id: 'TRIG', label: 'Trig' }, { id: 'ECHO', label: 'Echo' }, { id: 'GND', label: 'GND' }] });
   const fx = (label, hole, net) => ({ label, hole, net: net || label });
 
-  const TK = (extra) => ({ url: 'https://www.tinkercad.com/circuits', status: 'Pasos para reproducirlo en Tinkercad Circuits con tu cuenta (la aplicación no abre proyectos de Tinkercad). Enlace pendiente de verificación desde el entorno de desarrollo.', steps: ['Crea un circuito nuevo y añade un "Arduino Uno R3" y una "Placa de pruebas pequeña".'].concat(extra).concat(['Pulsa "Código", cambia a "Texto", pega el sketch y pulsa "Iniciar simulación".']) });
+  const TK = (extra) => ({ url: 'https://www.tinkercad.com/circuits', status: 'Pasos para reproducirlo en Tinkercad Circuits con tu cuenta; la aplicación no abre ni ejecuta proyectos de Tinkercad. Enlace comprobado el 19/10/2026. Si tu Tinkercad está en inglés, el botón «Código» es «Code» e «Iniciar simulación» es «Start Simulation». Los menús pueden cambiar con las actualizaciones del sitio.', steps: ['Crea un circuito nuevo y añade un "Arduino Uno R3" y una "Placa de pruebas pequeña".'].concat(extra).concat(['Pulsa «Código» (Code), cambia la vista a «Texto» (Text), pega el sketch y pulsa «Iniciar simulación» (Start Simulation).']) });
   const USB_OFF = { id: 'usb', text: 'El USB está desconectado mientras reviso.' };
   const NO_SHORT = { id: 'short', text: 'Ningún cable une 5V con GND, y ningún componente tiene sus dos patas en la misma tira.' };
   const LED_OK = { id: 'led', text: 'Cada LED tiene el ánodo hacia su resistencia y su pin, y el cátodo hacia GND.' };

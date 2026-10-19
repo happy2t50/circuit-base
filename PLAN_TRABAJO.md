@@ -116,9 +116,10 @@ Principios: contenido como datos puros; motores sin dependencias del DOM (probab
 - **Explicaciones de código ancladas a texto** (`find`): una explicación apunta a un fragmento de la línea, no a su número; si el código cambia, la explicación sigue en su línea y la prueba falla si el fragmento desaparece.
 - **Compilación real en lugar de revisión estática**: `downloads.arduino.cc` no era accesible, así que se compila con avr-gcc y el núcleo oficial de Arduino descargados de GitHub, con los parámetros de la placa Uno.
 
-### Pendientes conocidos
+| 2026-10-19 | Verificación | Completada | Firmware ejecutado en un ATmega328P emulado (40/40). Pruebas en Chromium, Firefox y WebKit. Auditoría WCAG 2.2 AA con axe-core sin infracciones (444 pantallas). Enlace de Tinkercad comprobado. Importación de la copia de seguridad del progreso. |
 
-- Verificar los enlaces y pasos de Tinkercad (sitio no accesible desde el entorno de desarrollo; marcados en la app).
-- Cargar los sketches en una placa real y montar los circuitos físicamente.
-- Probar en Firefox, Safari y con lectores de pantalla.
-- Importar una copia de seguridad del progreso (hoy solo se exporta).
+### Pendientes conocidos (requieren una persona o hardware)
+
+- Montar los circuitos y cargar los sketches en una placa Arduino Uno física.
+- Probar con lectores de pantalla (NVDA, VoiceOver, TalkBack) y en Safari de un iPhone o Mac.
+- Recorrer los pasos de Tinkercad dentro de una cuenta y anotar los nombres de menús en español.

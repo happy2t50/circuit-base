@@ -5,20 +5,38 @@
 ## Cómo ejecutarlas
 
 ```bash
-node --test tests/*.test.js                  # contenido y motores (sin navegador)
-AVR_GCC_DIR=… ARDUINO_CORE=… ARDUINO_LIBS=… python3 tests/compile_sketches.py   # compila los sketches
-python3 tests/e2e.py [--shots carpeta]       # extremo a extremo en Chromium con file://
+npm ci                                        # axe-core y avr8js (emulador del ATmega328P)
+node --test tests/*.test.js                   # contenido y motores (sin navegador)
+AVR_GCC_DIR=… ARDUINO_CORE=… ARDUINO_LIBS=… HEX_DIR=build-hex python3 tests/compile_sketches.py
+node tests/simulate_sketches.js               # ejecuta cada firmware en un ATmega328P emulado
+python3 tests/e2e.py --browser chromium|firefox|webkit
+python3 tests/a11y.py                         # auditoría WCAG 2.2 AA con axe-core
 ```
 
-Las tres suites terminan con código 1 si algo falla. En GitHub Actions se ejecutan antes de cada despliegue.
+Todas terminan con código 1 si algo falla. GitHub Actions las ejecuta en cada push y solo despliega si todas pasan; los fallos aparecen como anotaciones en la ejecución.
 
-## Resultado de la última ejecución
+## Resultado de la última ejecución (19/10/2026)
 
-| Suite | Resultado |
-|---|---|
-| Contenido y motores (`content.test.js`, `engine.test.js`) | **44 de 44** pruebas superadas |
-| Compilación para Arduino Uno R3 (`compile_sketches.py`) | **21 de 21** sketches compilan y caben en memoria |
-| Navegador (`e2e.py`, escritorio 1280 px y móvil 390 px en tema oscuro) | **127 de 127** comprobaciones superadas |
+| Suite | Dónde | Resultado |
+|---|---|---|
+| Contenido y motores | Node 22 | **48 de 48** pruebas |
+| Compilación para Arduino Uno R3 | avr-gcc 14.1 + ArduinoCore-avr | **21 de 21** sketches compilan y caben en memoria |
+| Comportamiento del firmware | avr8js (ATmega328P a 16 MHz) | **40 de 40** comprobaciones |
+| Navegador, escritorio y móvil | Chromium 141 (local y CI) | **130 de 130** comprobaciones |
+| Navegador, escritorio y móvil | Firefox (CI) | superadas |
+| Navegador, escritorio y móvil | WebKit, el motor de Safari (CI) | superadas |
+| Accesibilidad WCAG 2.2 A/AA | axe-core 4.10, Chromium | **444 pantallas** sin infracciones (claro y oscuro en escritorio, claro en móvil) |
+
+### Comportamiento del firmware (emulación)
+
+El `.hex` de cada sketch se ejecuta instrucción por instrucción en un ATmega328P emulado con temporizadores, puertos, conversor analógico, USART y bus I²C. El banco de pruebas simula lo que habría alrededor de la placa:
+
+- **Pulsadores con rebote** (P2): una pulsación con 6 rebotes cambia el LED exactamente una vez.
+- **Tensiones analógicas** en A0: potenciómetro (A3, A4, P6), LDR con histéresis (P3), TMP36 (≈25 °C con 0,75 V y aviso "Hace calor" con 0,85 V).
+- **Sensor HC-SR04**: responde a cada disparo en Trig con un pulso en Echo de la duración correspondiente a la distancia (P4, P5 y la lección); sin eco, el programa sigue respondiendo.
+- **Tiempos**: Blink y A1 (500 ms y 1 s), semáforo P1 (5 s, 2 s y 5 s, nunca dos LED a la vez), millis() sin bloquear.
+- **Salidas**: PWM de D9 (≈490 Hz y rampa del ciclo de trabajo), tonos de 440, 880 y 2000 Hz, pulsos del servo cada 20 ms entre 544 y 2400 µs.
+- **Pantalla LCD 16×2 por I²C** (dirección 0x27): se decodifican los bytes del PCF8574 y el HD44780; la fila 1 muestra "Hola, Arduino" y la fila 2 los segundos.
 
 ### Compilación (ATmega328P, 16 MHz)
 
@@ -38,7 +56,7 @@ Las tres suites terminan con código 1 si algo falla. En GitHub Actions se ejecu
 
 La compilación usa el núcleo oficial de Arduino y los mismos parámetros que el IDE para la placa "Arduino Uno". Se comprobó además que un sketch con un error (`pinmode` en minúscula) es rechazado con el mismo mensaje que muestra la lección M7.
 
-### Pruebas de contenido y motores (44)
+### Pruebas de contenido y motores (48)
 
 Las 37 de la versión 1, más:
 
@@ -50,7 +68,7 @@ Las 37 de la versión 1, más:
 - Código Arduino: pines digitales entre D2 y D13, analogWrite() solo en pines PWM, `#include <Servo.h>` cuando se usa Servo y todas las explicaciones línea por línea apuntan a líneas que existen.
 - Servo y tone() no se combinan con PWM en los pines cuyos temporizadores ocupan.
 
-### Pruebas en navegador (127)
+### Pruebas en navegador (130 por navegador)
 
 Las 80 de la versión 1 (adaptadas al contenido nuevo), más:
 
@@ -87,11 +105,19 @@ Las 80 de la versión 1 (adaptadas al contenido nuevo), más:
 | Los bloques de código mostraban una línea en blanco extra entre líneas. | Revisión visual en móvil | Se eliminó el salto de línea duplicado; las líneas vacías conservan su altura. |
 | En la actividad sobre `if (digitalRead(2) = LOW)` el enunciado decía que el LED no encendía, pero ese código ni siquiera compila. | Revisión del contenido al compilar | Enunciado corregido: "al verificar aparece un error". |
 
+### Compatibilidad y accesibilidad (19/10/2026)
+
+| Error | Cómo se detectó | Corrección |
+|---|---|---|
+| En Firefox no se podía hacer clic en las partes finas de los diagramas interactivos (cables, símbolos huecos). | Pruebas en Firefox (CI) | Cada parte clicable tiene un rectángulo invisible que cubre su caja; `pointer-events: bounding-box` solo existe en Chrome. |
+| En Safari (WebKit), `/cuestionarios` y la lección de circuitos mixtos desbordaban a 390 px. | Pruebas en WebKit (CI) | `min-width: 0` en las tarjetas con diagramas y tablas que parten palabras largas en móvil. |
+| Los bloques de código desplazables no se podían alcanzar con el teclado en móvil. | Auditoría axe (`scrollable-region-focusable`) | Son regiones enfocables con nombre. |
+| El botón "Marcar como completada" contaba como objetivo táctil pequeño. | Auditoría axe (`target-size`) | Falso positivo: la cabecera fija lo tapaba porque la página estaba desplazada. La auditoría se hace con la página arriba. |
+
 ## Lo que NO se ha probado
 
-- **Otros navegadores**: solo Chromium. La app usa `:has()` en CSS, compatible con versiones recientes de Firefox y Safari.
-- **Lectores de pantalla**: se comprobaron nombres accesibles, foco y teclado, pero no NVDA, VoiceOver ni TalkBack.
-- **Hardware real**: los sketches compilan para el ATmega328P, pero no se cargaron en una placa física ni se montaron los circuitos.
-- **Tinkercad**: el sitio no fue accesible desde el entorno de desarrollo. Los enlaces están marcados como "pendiente de verificación" y los pasos describen su interfaz conocida.
-- **Librería LiquidCrystal_I2C**: se compiló con la versión de `johnrickman/LiquidCrystal_I2C`. Otras librerías con el mismo nombre pueden tener funciones distintas; la lección lo advierte.
-- **Fuentes de Google**: el entorno local de pruebas no tiene internet; las capturas usan las fuentes de respaldo.
+- **Hardware real**: el firmware se ejecutó en un ATmega328P emulado, que reproduce las instrucciones, los temporizadores y los periféricos, pero no hay componentes físicos: no se comprueban falsos contactos, tolerancias, consumo real ni componentes defectuosos. El montaje físico en una protoboard sigue siendo una tarea del estudiante.
+- **Lectores de pantalla**: la auditoría automática (axe) detecta alrededor de un tercio de los problemas de accesibilidad. Están comprobados los nombres accesibles, el foco, el teclado, el contraste y los objetivos táctiles, pero no se probó con NVDA, VoiceOver ni TalkBack.
+- **Tinkercad**: el enlace se comprobó (la página "Circuits on Tinkercad" carga) y los nombres principales de su interfaz en inglés (Create new Circuit, Code, Start Simulation, Arduino Uno R3) coinciden con tutoriales publicados. Los pasos no se ejecutaron dentro de Tinkercad, porque eso requiere iniciar sesión en una cuenta, y los nombres en español pueden variar.
+- **Safari en iPhone o Mac**: se probó el motor WebKit en Linux, que es el de Safari, pero no el navegador Safari en un dispositivo de Apple.
+- **Librería LiquidCrystal_I2C**: se compiló y emuló con la versión de `johnrickman/LiquidCrystal_I2C`. Otras librerías con el mismo nombre pueden tener funciones distintas; la lección lo advierte.

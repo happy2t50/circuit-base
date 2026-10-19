@@ -39,16 +39,19 @@ En total: 24 lecciones, 105 diapositivas, 146 actividades, 19 prácticas y proye
 ## Pruebas
 
 ```bash
-node --test tests/*.test.js     # 44 pruebas de contenido y motores (Node 18+)
+npm ci                              # axe-core y avr8js
+node --test tests/*.test.js         # 48 pruebas de contenido y motores
 python3 tests/compile_sketches.py   # compila los 21 sketches para el ATmega328P (ver cabecera del script)
-python3 tests/e2e.py            # 127 comprobaciones en Chromium (pip install playwright && playwright install chromium)
+node tests/simulate_sketches.js     # 40 comprobaciones del firmware en un ATmega328P emulado
+python3 tests/e2e.py --browser chromium|firefox|webkit   # 130 comprobaciones por navegador
+python3 tests/a11y.py               # auditoría WCAG 2.2 AA con axe-core
 ```
 
 Resultados y alcance en `docs/PRUEBAS.md`.
 
 ## Despliegue
 
-Cada push a `main` ejecuta las tres suites de pruebas en GitHub Actions y, si todas pasan, publica la app en GitHub Pages (`.github/workflows/pages.yml`). Solo se publican `index.html`, `css/` y `js/`.
+Cada push a `main` ejecuta en GitHub Actions las pruebas de contenido, la compilación y emulación del firmware, las pruebas en Chromium, Firefox y WebKit, y la auditoría de accesibilidad, y, si todas pasan, publica la app en GitHub Pages (`.github/workflows/pages.yml`). Solo se publican `index.html`, `css/` y `js/`.
 
 Si el primer despliegue falla porque Pages no está activado, ve a **Settings → Pages → Build and deployment → Source**, elige **GitHub Actions** y vuelve a ejecutar el flujo desde la pestaña **Actions**.
 

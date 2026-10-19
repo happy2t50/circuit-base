@@ -15,8 +15,8 @@
   function fmtOhm(o) { return o >= 1000 ? (o / 1000).toString().replace('.', ',') + ' kΩ' : o + ' Ω'; }
 
   const BAT9 = [{ label: '9V +', hole: 'tp1', net: 'VCC' }, { label: '9V −', hole: 'tn3', net: 'GND' }];
-  const TK_STATUS = 'Pasos para reproducir el circuito en Tinkercad Circuits con tu cuenta. La aplicación no abre ni ejecuta proyectos de Tinkercad. Enlace pendiente de verificación desde el entorno de desarrollo; los nombres de menús pueden cambiar.';
-  const tk = (extra) => ({ url: 'https://www.tinkercad.com/circuits', status: TK_STATUS, steps: ['Crea un circuito nuevo en Tinkercad Circuits.', 'Arrastra una "Placa de pruebas pequeña" y una "Batería de 9 V" (o la fuente que indica la práctica).'].concat(extra).concat(['Pulsa "Iniciar simulación" y compara con el resultado esperado. Pasa el ratón sobre los componentes para ver avisos de corriente.']) });
+  const TK_STATUS = 'Pasos para reproducirlo en Tinkercad Circuits con tu cuenta; la aplicación no abre ni ejecuta proyectos de Tinkercad. Enlace comprobado el 19/10/2026. Si tu Tinkercad está en inglés, el botón «Código» es «Code» e «Iniciar simulación» es «Start Simulation». Los menús pueden cambiar con las actualizaciones del sitio.';
+  const tk = (extra) => ({ url: 'https://www.tinkercad.com/circuits', status: TK_STATUS, steps: ['Crea un circuito nuevo en Tinkercad Circuits.', 'Arrastra una "Placa de pruebas pequeña" y una "Batería de 9 V" (o la fuente que indica la práctica).'].concat(extra).concat(['Pulsa «Iniciar simulación» (Start Simulation) y compara con el resultado esperado. Pasa el ratón sobre los componentes para ver avisos de corriente.']) });
   const SAFE_9V = 'Pila de 9 V: si algo se calienta, desconecta el clip de inmediato. Nunca unas el + con el − de la pila.';
   const baseChecklist = [
     { id: 'off', text: 'La pila está desconectada mientras reviso.' },
